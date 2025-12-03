@@ -1,41 +1,329 @@
-  :root{
-    --bg:#0f172a; --card:#111827; --muted:#94a3b8; --fg:#e5e7eb; --primary:#22d3ee; --accent:#a78bfa;
-    --gold:#f59e0b; --silver:#9ca3af; --bronze:#c084fc;
+:root {
+  --bg: #0f172a;
+  --card: #111827;
+  --muted: #94a3b8;
+  --fg: #e5e7eb;
+  --primary: #22d3ee;
+  --accent: #a78bfa;
+  --gold: #f59e0b;
+  --silver: #9ca3af;
+  --bronze: #c084fc;
+}
+*{
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family: Inter, system-ui, Segoe UI, Roboto, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+.container {
+  max-width: 1200px;
+  margin: 24px;
+  padding: 0 16px;
+}
+h1 {
+  font-size: 28px;
+  margin: 0 0 8px;
+}
+.sub {
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+}
+.card {
+  background: var(--card);
+  border: 1px solid #1f2937;
+  border-radius: 16px;
+  padding: 14px 14px 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.toolbar input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+}
+input,
+select,
+button {
+  background: #0b1220;
+  border: 1px solid #263244;
+  color: var(--fg);
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+button {
+  cursor: pointer;
+}
+button.primary {
+  background: linear-gradient(180deg, #1cd3d3, #12a7c7);
+  border: none;
+  color: #00252c;
+  font-weight: 800;
+}
+button.ghost {
+  background: transparent;
+  border: 1px dashed #334155;
+}
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+th,
+td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #1f2937;
+  vertical-align: middle;
+  font-size: 14px;
+}
+th {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #a5b4fc;
+  text-transform: uppercase;
+}
+tbody tr:hover {
+  background: #0b1220;
+}
+.rank {
+  width: 44px;
+  text-align: center;
+  font-weight: 800;
+  color: #a5b4fc;
+}
+.medal-ctrl {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.medal-ctrl input {
+  width: 56px;
+  text-align: center;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid #263244;
+}
+.gold {
+  color: var(--gold);
+}
+.silver {
+  color: var(--silver);
+}
+.bronze {
+  color: var(--bronze);
+}
+.kpi {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
+}
+.kpi .chip {
+  background: #0b1220;
+}
+.points {
+  font-weight: 800;
+}
+.btn-inc {
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #263244;
+}
+.btn-inc[data-type="G"] {
+  color: var(--gold);
+}
+.btn-inc[data-type="S"] {
+  color: var(--silver);
+}
+.btn-inc[data-type="B"] {
+  color: var(--bronze);
+}
+.muted {
+  color: var(--muted);
+}
+.mt8 {
+  margin-top: 8px;
+}
+.mt16 {
+  margin-top: 16px;
+}
+.small {
+  font-size: 12px;
+}
+.sticky-head thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+}
+.danger {
+  color: #f87171;
+}
+th.gold,th.silver,th.bronze{
+  min-width: 80px;
+}
+th.team{
+  min-width: 150px;
+}
+th.birthday{
+  min-width: 100px;
+}
+td input{
+  width: 100%;
+}
+.inp-medal{
+  text-align: center
+}
+.col-pts {
+  /* dùng để ẩn/hiện cột điểm */
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+/* Tablet: đổi sang 1 cột, thu padding */
+@media (max-width: 1024px) {
+  h1 {
+    font-size: 24px;
   }
-  html,body{height:100%}
-  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg)}
-  .container{max-width:1200px;margin:24px ;padding:0 16px}
-  h1{font-size:28px;margin:0 0 8px}
-  .sub{color:var(--muted);margin-bottom:20px}
-  .grid{display:grid;grid-template-columns:1fr 2fr;gap:16px}
-  .card{background:var(--card);border:1px solid #1f2937;border-radius:16px;padding:14px 14px 10px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
-  .card h2{margin:0 0 8px;font-size:18px}
-  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
-  .toolbar input[type="text"]{flex:1;min-width:180px}
-  input,select,button{background:#0b1220;border:1px solid #263244;color:var(--fg);padding:8px 10px;border-radius:10px}
-  button{cursor:pointer}
-  button.primary{background:linear-gradient(180deg,#1cd3d3,#12a7c7);border:none;color:#00252c;font-weight:800}
-  button.ghost{background:transparent;border:1px dashed #334155}
-  table{width:100%;border-collapse:separate;border-spacing:0}
-  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid #1f2937;vertical-align:middle}
-  th{font-size:12px;letter-spacing:.04em;color:#a5b4fc;text-transform:uppercase}
-  tbody tr:hover{background:#0b1220}
-  .rank{width:44px;text-align:center;font-weight:800;color:#a5b4fc}
-  .medal-ctrl{display:flex;gap:6px;align-items:center}
-  .medal-ctrl input{width:56px;text-align:center}
-  .chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;font-size:12px;border:1px solid #263244}
-  .gold{color:var(--gold)} .silver{color:var(--silver)} .bronze{color:var(--bronze)}
-  .kpi{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
-  .kpi .chip{background:#0b1220}
-  .points{font-weight:800}
-  .btn-inc{padding:4px 8px;border-radius:8px;border:1px solid #263244}
-  .btn-inc[data-type="G"]{color:var(--gold)}
-  .btn-inc[data-type="S"]{color:var(--silver)}
-  .btn-inc[data-type="B"]{color:var(--bronze)}
-  .muted{color:var(--muted)}
-  .mt8{margin-top:8px}
-  .mt16{margin-top:16px}
-  .small{font-size:12px}
-  .sticky-head thead th{position:sticky;top:0;background:var(--card)}
-  .danger{color:#f87171}
-  .col-pts{ /* dùng để ẩn/hiện cột điểm */ }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 12px;
+  }
+}
+
+/* Mobile: 1 cột, toolbar dọc, bỏ scroll dọc trong box, chỉ giữ scroll ngang */
+@media (max-width: 768px) {
+  .container {
+    margin: 16px auto;
+    padding: 0 10px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .sub {
+    font-size: 13px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toolbar input[type="text"] {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .toolbar button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Bỏ max-height 50vh để không phải scroll trong khung, chỉ scroll trang */
+  .card > div[style*="max-height: 50vh"] {
+    max-height: none !important;
+  }
+
+  /* Cho phép scroll ngang bảng, dọc thì theo trang */
+  .card > div[style*="overflow: auto"] {
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  th,
+  td {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .rank {
+    width: 32px;
+  }
+
+  .chip {
+    font-size: 11px;
+  }
+
+  .kpi {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  input,
+  select,
+  button {
+    font-size: 13px;
+    padding: 7px 9px;
+  }
+
+  .mt16 {
+    margin-top: 12px;
+  }
+}
+
+/* Mobile nhỏ: tối giản bớt cột cho đỡ chật */
+@media (max-width: 600px) {
+  /* Ẩn cột "Nhập nhanh" (+V/+B/+Đ) – vẫn nhập bằng ô số được */
+  #tblAthletes th:nth-child(10),
+  #tblAthletes td:nth-child(10) {
+    display: none;
+  }
+
+  .card h2 {
+    font-size: 16px;
+  }
+
+  th {
+    font-size: 11px;
+  }
+
+  td {
+    font-size: 11px;
+  }
+
+  .medal-ctrl {
+    gap: 4px;
+  }
+
+  .btn-inc {
+    padding: 3px 6px;
+    font-size: 11px;
+  }
+}
