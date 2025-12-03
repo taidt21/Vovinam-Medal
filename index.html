@@ -1,160 +1,206 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="vi">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Vovinam Medal Tracker v2.1 — jQuery/HTML</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-<div class="container">
-  <h1>Vovinam Medal Tracker v2.1</h1>
-  <div class="sub">Nhập huy chương theo VĐV → BXH VĐV & Đoàn cập nhật tức thì. Có 2 chế độ: Điểm hệ số / Đếm huy chương.</div>
-
-  <div class="card">
-    <h2>Thiết lập chế độ & điểm</h2>
-    <div class="kpi">
-      <label class="chip">
-        <input type="radio" name="calcMode" value="score" checked style="margin-right:6px"> Tính theo điểm hệ số
-      </label>
-      <label class="chip">
-        <input type="radio" name="calcMode" value="count" style="margin-right:6px"> Tính theo số huy chương
-      </label>
-      <span class="chip small muted">Khi đếm huy chương: ưu tiên Vàng → Bạc → Đồng.</span>
-    </div>
-    <div class="kpi">
-      <label class="chip gold">Vàng = <input id="wGold" type="number" min="1" step="1" value="3" style="width:64px;text-align:center"></label>
-      <label class="chip silver">Bạc = <input id="wSilver" type="number" min="0" step="1" value="2" style="width:64px;text-align:center"></label>
-      <label class="chip bronze">Đồng = <input id="wBronze" type="number" min="0" step="1" value="1" style="width:64px;text-align:center"></label>
-      <span class="chip"><span class="muted">Điểm = V×wG + B×wS + Đ×wB</span></span>
-    </div>
-  </div>
-
-  <div class="grid mt16">
-    <div class="card">
-      <h2>BXH Vận động viên</h2>
-      <div class="toolbar">
-        <input id="search" type="text" placeholder="Tìm VĐV hoặc Đoàn..." />
-        <button id="btnAddRow" class="ghost">+ Thêm VĐV</button>
-        <button id="btnSave" class="primary">💾 Lưu máy (local)</button>
-        <button id="btnReset" class="ghost danger">🧹 Xoá dữ liệu</button>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Vovinam Medal Tracker v2.1 — jQuery/HTML</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Vovinam Medal Tracker v2.1</h1>
+      <div class="sub">
+        Nhập huy chương theo VĐV → BXH VĐV & Đoàn cập nhật tức thì. Có 2 chế độ:
+        Điểm hệ số / Đếm huy chương.
       </div>
-      <div class="small muted">Gợi ý: dùng các nút +V / +B / +Đ để nhập nhanh sau mỗi nội dung thi.</div>
-      <div class="mt8" style="overflow:auto;max-height:50vh;border:1px solid #1f2937;border-radius:12px">
-        <table id="tblAthletes" class="sticky-head">
-          <thead>
-            <tr>
-              <th class="rank">#</th>
-              <th style="min-width: 120px;">Vận động viên</th>
-              <th>Đoàn</th>
-              <th class="gold">Vàng</th>
-              <th class="silver">Bạc</th>
-              <th class="bronze">Đồng</th>
-              <th>Tổng</th>
-              <th class="col-pts">Điểm</th>
-              <th>Nhập nhanh</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr data-id="a1" data-team="Hà Nội">
-              <td class="rank">–</td>
-              <td class="ath-name" contenteditable="true">Đinh Tuấn Tài</td>
-              <td><input class="inp-team" type="text" value="Hà Nội" /></td>
-              <td><input class="inp-medal g" type="number" min="0" value="0" /></td>
-              <td><input class="inp-medal s" type="number" min="0" value="0" /></td>
-              <td><input class="inp-medal b" type="number" min="0" value="0" /></td>
-              <td class="sum">0</td>
-              <td class="pts col-pts">0</td>
-              <td class="medal-ctrl">
-                <button class="btn-inc" data-type="G">+V</button>
-                <button class="btn-inc" data-type="S">+B</button>
-                <button class="btn-inc" data-type="B">+Đ</button>
-              </td>
-              <td><button class="btnDelRow danger">Xoá</button></td>
-            </tr>
-            <tr data-id="a2" data-team="TP.HCM">
-              <td class="rank">–</td>
-              <td class="ath-name" contenteditable="true">Nguyễn Minh Khang</td>
-              <td><input class="inp-team" type="text" value="TP.HCM" /></td>
-              <td><input class="inp-medal g" type="number" min="0" value="0" /></td>
-              <td><input class="inp-medal s" type="number" min="0" value="0" /></td>
-              <td><input class="inp-medal b" type="number" min="0" value="0" /></td>
-              <td class="sum">0</td>
-              <td class="pts col-pts">0</td>
-              <td class="medal-ctrl">
-                <button class="btn-inc" data-type="G">+V</button>
-                <button class="btn-inc" data-type="S">+B</button>
-                <button class="btn-inc" data-type="B">+Đ</button>
-              </td>
-              <td><button class="btnDelRow danger">Xoá</button></td>
-            </tr>
-            <tr data-id="a3" data-team="Đà Nẵng">
-              <td class="rank">–</td>
-              <td class="ath-name" contenteditable="true">Trần Gia Huy</td>
-              <td><input class="inp-team" type="text" value="Đà Nẵng" /></td>
-              <td><input class="inp-medal g" type="number" min="0" value="0" /></td>
-              <td><input class="inp-medal s" type="number" min="0" value="0" /></td>
-              <td><input class="inp-medal b" type="number" min="0" value="0" /></td>
-              <td class="sum">0</td>
-              <td class="pts col-pts">0</td>
-              <td class="medal-ctrl">
-                <button class="btn-inc" data-type="G">+V</button>
-                <button class="btn-inc" data-type="S">+B</button>
-                <button class="btn-inc" data-type="B">+Đ</button>
-              </td>
-              <td><button class="btnDelRow danger">Xoá</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="mt8 small muted">Tiêu chí xếp hạng VĐV: (Điểm ↓ nếu ở chế độ Điểm) • Vàng ↓ • Bạc ↓ • Đồng ↓ • Tên ↑</div>
-    </div>
 
-    <div class="card">
-      <h2>BXH Đoàn</h2>
-      <div class="toolbar">
-        <button id="btnExportCsv" class="ghost">⬇️ Xuất CSV (cả VĐV & Đoàn)</button>
+      <div class="card">
+        <h2>Thiết lập chế độ & điểm</h2>
+        <div class="kpi">
+          <label class="chip">
+            <input
+              type="radio"
+              name="calcMode"
+              value="score"
+              checked
+              style="margin-right: 6px"
+            />
+            Tính theo điểm hệ số
+          </label>
+          <label class="chip">
+            <input
+              type="radio"
+              name="calcMode"
+              value="count"
+              style="margin-right: 6px"
+            />
+            Tính theo số huy chương
+          </label>
+          <span class="chip small muted"
+            >Khi đếm huy chương: ưu tiên Vàng → Bạc → Đồng.</span
+          >
+        </div>
+        <div class="kpi">
+          <label class="chip gold"
+            >Vàng =
+            <input
+              id="wGold"
+              type="number"
+              min="1"
+              step="1"
+              value="3"
+              style="width: 64px; text-align: center"
+          /></label>
+          <label class="chip silver"
+            >Bạc =
+            <input
+              id="wSilver"
+              type="number"
+              min="0"
+              step="1"
+              value="2"
+              style="width: 64px; text-align: center"
+          /></label>
+          <label class="chip bronze"
+            >Đồng =
+            <input
+              id="wBronze"
+              type="number"
+              min="0"
+              step="1"
+              value="1"
+              style="width: 64px; text-align: center"
+          /></label>
+          <span class="chip"
+            ><span class="muted">Điểm = V×wG + B×wS + Đ×wB</span></span
+          >
+        </div>
       </div>
-      <div style="overflow:auto;max-height:50vh;border:1px solid #1f2937;border-radius:12px">
-        <table id="tblTeams" class="sticky-head">
-          <thead>
-            <tr>
-              <th class="rank">#</th>
-              <th>Đoàn</th>
-              <th class="gold">Vàng</th>
-              <th class="silver">Bạc</th>
-              <th class="bronze">Đồng</th>
-              <th>Tổng</th>
-              <th class="col-pts">Điểm</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-      <div class="mt8 small muted">Tiêu chí xếp hạng Đoàn: (Điểm ↓ nếu ở chế độ Điểm) • Vàng ↓ • Bạc ↓ • Đồng ↓ • Tên ↑</div>
 
-      <div class="mt16">
-        <details>
-          <summary class="small">⚙️ Tuỳ chọn lưu / nhập dữ liệu</summary>
-          <div class="mt8 small">
-            <div class="toolbar" style="gap:8px">
-              <button id="btnDump" class="ghost">📤 Xuất JSON</button>
-              <button id="btnLoad" class="ghost">📥 Nhập JSON</button>
-            </div>
-            <textarea id="ioJson" rows="6" style="width:100%;margin-top:8px" placeholder='Dán JSON vào đây để nhập...'></textarea>
+      <div class="grid mt16">
+        <div class="card">
+          <h2>BXH Vận động viên</h2>
+          <div class="toolbar">
+            <input id="search" type="text" placeholder="Tìm VĐV hoặc Đoàn..." />
+
+            <!-- Nút import + input file ẩn -->
+            <button id="btnImport" class="ghost">📥 Import Excel</button>
+            <input
+              id="fileImport"
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style="display: none"
+            />
+
+            <button id="btnAddRow" class="ghost">+ Thêm VĐV</button>
+            <button id="btnSave" class="primary">💾 Lưu máy (local)</button>
+            <button id="btnReset" class="ghost danger">🧹 Xoá dữ liệu</button>
           </div>
-        </details>
+          <div class="small muted">
+            Khi import Excel: cột A = Tên VĐV, cột B = Tên đoàn, cột C = Năm
+            sinh (tuỳ chọn). Hàng đầu tiên có thể là tiêu đề.
+          </div>
+
+          <div class="small muted">
+            Gợi ý: dùng các nút +V / +B / +Đ để nhập nhanh sau mỗi nội dung thi.
+          </div>
+          <div
+            class="mt8"
+            style="
+              overflow: auto;
+              max-height: 50vh;
+              border: 1px solid #1f2937;
+              border-radius: 12px;
+            "
+          >
+            <table id="tblAthletes" class="sticky-head">
+              <thead>
+                <tr>
+                  <th class="rank">#</th>
+                  <th style="min-width: 120px">Vận động viên</th>
+                  <th>Năm sinh</th>
+                  <th>Đoàn</th>
+                  <th class="gold">Vàng</th>
+                  <th class="silver">Bạc</th>
+                  <th class="bronze">Đồng</th>
+                  <th>Tổng</th>
+                  <th class="col-pts">Điểm</th>
+                  <th>Nhập nhanh</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt8 small muted">
+            Tiêu chí xếp hạng VĐV: (Điểm ↓ nếu ở chế độ Điểm) • Vàng ↓ • Bạc ↓ •
+            Đồng ↓ • Tên ↑
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>BXH Đoàn</h2>
+          <div class="toolbar">
+            <button id="btnExportCsv" class="ghost">
+              ⬇️ Xuất CSV (cả VĐV & Đoàn)
+            </button>
+          </div>
+          <div
+            style="
+              overflow: auto;
+              max-height: 50vh;
+              border: 1px solid #1f2937;
+              border-radius: 12px;
+            "
+          >
+            <table id="tblTeams" class="sticky-head">
+              <thead>
+                <tr>
+                  <th class="rank">#</th>
+                  <th>Đoàn</th>
+                  <th class="gold">Vàng</th>
+                  <th class="silver">Bạc</th>
+                  <th class="bronze">Đồng</th>
+                  <th>Tổng</th>
+                  <th class="col-pts">Điểm</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="mt8 small muted">
+            Tiêu chí xếp hạng Đoàn: (Điểm ↓ nếu ở chế độ Điểm) • Vàng ↓ • Bạc ↓
+            • Đồng ↓ • Tên ↑
+          </div>
+
+          <div class="mt16">
+            <details>
+              <summary class="small">⚙️ Tuỳ chọn lưu / nhập dữ liệu</summary>
+              <div class="mt8 small">
+                <div class="toolbar" style="gap: 8px">
+                  <button id="btnDump" class="ghost">📤 Xuất JSON</button>
+                  <button id="btnLoad" class="ghost">📥 Nhập JSON</button>
+                </div>
+                <textarea
+                  id="ioJson"
+                  rows="6"
+                  style="width: 100%; margin-top: 8px"
+                  placeholder="Dán JSON vào đây để nhập..."
+                ></textarea>
+              </div>
+            </details>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
-<script src="script.js">
-
-</script>
-</body>
+    <!-- Thư viện đọc Excel -->
+    <script src="./excel.min.js"></script>
+    <script src="./jquery.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
