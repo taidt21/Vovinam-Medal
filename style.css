@@ -29,6 +29,17 @@ body {
   margin: 24px;
   padding: 0 16px;
 }
+/* For Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
 h1 {
   font-size: 28px;
   margin: 0 0 8px;
@@ -189,6 +200,7 @@ tbody tr:hover {
 }
 th.gold,th.silver,th.bronze{
   min-width: 80px;
+  text-align: center;
 }
 th.team{
   min-width: 150px;
@@ -196,12 +208,45 @@ th.team{
 th.birthday{
   min-width: 100px;
 }
+th.name{
+  min-width: 126px;
+}
 td input{
   width: 100%;
 }
-.inp-medal{
+.inp-medal,td.sum,td.pts{
   text-align: center
 }
+th.age{
+  min-width: 100px;
+}
+th.content{
+  min-width: 200px;
+}
+th.medal{
+  min-width: 80px;
+}
+.ath-name{
+  white-space: pre-line;
+}
+.master-row {
+  background: rgba(255,255,255,0.12);
+  font-weight: bold;
+}
+
+.member-row {
+  background: rgba(255,255,255,0.04);
+}
+
+.member-row td {
+  opacity: 0.85;
+  padding-left: 18px;
+}
+
+.sub-empty {
+  background: transparent;
+}
+
 .col-pts {
   /* dùng để ẩn/hiện cột điểm */
 }

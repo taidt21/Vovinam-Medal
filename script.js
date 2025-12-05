@@ -1,43 +1,25 @@
 (function ($) {
   "use strict";
 
-  const LS_KEY = "vovinam.medals.v2.1";
-  const APP_VERSION = 2;
+  const LS_KEY = "vovinam.scores.v2";
 
-  // ===== Focus-lock để không mất con trỏ khi gõ =====
-  let isTyping = false;
-
-  // ===== Utils chung =====
-  function normalizeStr(str) {
-    return (str || "")
-      .toString()
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  }
-
+  // ======================
+  // Utils
+  // ======================
   function uid() {
-    return "a" + Math.random().toString(36).slice(2, 9);
+    return "r" + Math.random().toString(36).slice(2, 9);
   }
 
-  function escapeHtml(s) {
-    return (s + "").replace(
-      /[&<>"']/g,
-      (m) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;",
-        }[m])
-    );
-  }
+function normalizeStr(str) {
+  return (str || "")
+    .toString()
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+    .replace(/đ/g, "d");             // chuyển đ -> d để bắt được "dong doi"
+}
 
-  function escapeAttr(s) {
-    return escapeHtml(s).replace(/"/g, "&quot;");
-  }
 
   function toast(msg, isErr) {
     const el = $("<div/>")
@@ -52,150 +34,449 @@
         color: "#e5f5f5",
         borderRadius: "10px",
         zIndex: 9999,
-        boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+        boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
       });
     $("body").append(el);
     setTimeout(() => el.fadeOut(300, () => el.remove()), 1800);
   }
 
-  // ===== Mode & trọng số =====
-  function mode() {
-    return $('input[name="calcMode"]:checked').val() || "score";
+  // ======================
+  // Create row HTML
+  // type: "single" | "master" | "member"
+  // ======================
+  function makeRowHtml(row) {
+    const id = row.id || uid();
+    const type = row.type || "single";
+    const parentId = row.parentId || "";
+
+    const isMaster = type === "master";
+    const isMember = type === "member";
+
+    const age = row.age || "";
+    const ev = row.event || "";
+    const name = row.name || "";
+    const yob = row.yob || "";
+    const team = row.team || "";
+    const g1 = row.g1 ?? "";
+    const g2 = row.g2 ?? "";
+    const g3 = row.g3 ?? "";
+    const g4 = row.g4 ?? "";
+    const g5 = row.g5 ?? "";
+    const total = row.total ?? "";
+    const rank = row.rank ?? "";
+    const medal = row.medal || "";
+
+    const rowClass =
+      type === "master"
+        ? "team-master-row"
+        : type === "member"
+        ? "team-member-row"
+        : "";
+
+    // Age cell
+    const ageCell = isMember
+      ? `<td>
+           <span class="sub-age">${age}</span>
+           <input type="hidden" class="inp-age" value="${age}" />
+         </td>`
+      : `<td><input class="inp-age" type="text" value="${age}" /></td>`;
+
+    // Event cell
+    const eventCell = isMember
+      ? `<td>
+           <span class="sub-event">${ev}</span>
+           <input type="hidden" class="inp-event" value="${ev}" />
+         </td>`
+      : `<td><input class="inp-event" type="text" value="${ev}" /></td>`;
+
+    // Name cell
+    const nameCell = isMember
+      ? `<td contenteditable="true" class="ath-name">– ${name || ""}</td>`
+      : `<td contenteditable="true" class="ath-name">${name || ""}</td>`;
+
+    // YOB cell
+    const yobCell = isMember
+      ? `<td>
+           <span class="sub-yob">${yob}</span>
+           <input type="hidden" class="inp-yob" value="${yob}" />
+         </td>`
+      : `<td><input class="inp-yob" type="number" value="${yob}" /></td>`;
+
+    // Team cell
+    const teamCell = isMember
+      ? `<td>
+           <span class="sub-team">${team}</span>
+           <input type="hidden" class="inp-team" value="${team}" />
+         </td>`
+      : `<td><input class="inp-team" type="text" value="${team}" /></td>`;
+
+    // Score cells
+    const scoreCells = isMember
+      ? `
+        <td class="sub-empty"></td>
+        <td class="sub-empty"></td>
+        <td class="sub-empty"></td>
+        <td class="sub-empty"></td>
+        <td class="sub-empty"></td>
+        <td class="total"></td>
+        <td class="rank-num"></td>
+        <td class="medal"></td>
+      `
+      : `
+        <td><input class="inp-g g1" type="number" step="0.1" value="${g1}" /></td>
+        <td><input class="inp-g g2" type="number" step="0.1" value "${g2}" /></td>
+        <td><input class="inp-g g3" type="number" step="0.1" value="${g3}" /></td>
+        <td><input class="inp-g g4" type="number" step="0.1" value="${g4}" /></td>
+        <td><input class="inp-g g5" type="number" step="0.1" value="${g5}" /></td>
+        <td class="total">${total}</td>
+        <td class="rank-num">${rank}</td>
+        <td class="medal">${medal}</td>
+      `;
+
+    return `
+      <tr data-id="${id}" data-type="${type}" ${
+      parentId ? `data-parent="${parentId}"` : ""
+    } class="${rowClass}">
+        <td class="rank stt">-</td>
+        ${ageCell}
+        ${eventCell}
+        ${nameCell}
+        ${yobCell}
+        ${teamCell}
+        ${scoreCells}
+        <td><button class="btnDelRow danger">Xoá</button></td>
+      </tr>
+    `;
   }
 
-  function applyModeUI() {
-    const m = mode();
-    if (m === "count") {
-      $(".col-pts").hide();
-    } else {
-      $(".col-pts").show();
+  // ======================
+  // Compute total score for a row
+  // ======================
+  function computeTotalFromRow($tr) {
+    const type = $tr.data("type") || "single";
+    if (type === "member") {
+      $tr.find(".total").text("");
+      return 0;
     }
-    const $weightsRow = $("#wGold, #wSilver, #wBronze").closest("label");
-    $weightsRow.css("opacity", m === "count" ? 0.5 : 1);
+
+    function readScore(cls) {
+      const v = $tr.find(cls).val();
+      if (v === undefined || v === null || v === "") return null;
+      const num = parseFloat(v.toString().replace(",", "."));
+      return isNaN(num) ? null : num;
+    }
+
+    const s1 = readScore(".g1");
+    const s2 = readScore(".g2");
+    const s3 = readScore(".g3");
+    const s4 = readScore(".g4");
+    const s5 = readScore(".g5");
+    const scores = [s1, s2, s3, s4, s5].filter((v) => v !== null);
+
+    if (!scores.length) {
+      $tr.find(".total").text("");
+      return 0;
+    }
+
+    const sum = scores.reduce((a, b) => a + b, 0);
+    let total = sum;
+    if (scores.length >= 3) {
+      const min = Math.min(...scores);
+      const max = Math.max(...scores);
+      total = sum - min - max;
+    }
+
+    $tr.find(".total").text(total ? total.toFixed(2) : "");
+    return total;
   }
 
-  function weights() {
+  // ======================
+  // Read row data object
+  // ======================
+  function getRowData($tr) {
+    const type = $tr.data("type") || "single";
+    const parentId = $tr.data("parent") || "";
+
+    const g1 = parseFloat($tr.find(".g1").val()) || 0;
+    const g2 = parseFloat($tr.find(".g2").val()) || 0;
+    const g3 = parseFloat($tr.find(".g3").val()) || 0;
+    const g4 = parseFloat($tr.find(".g4").val()) || 0;
+    const g5 = parseFloat($tr.find(".g5").val()) || 0;
+
+    const total = computeTotalFromRow($tr);
+
     return {
-      g: parseInt($("#wGold").val() || 3, 10),
-      s: parseInt($("#wSilver").val() || 2, 10),
-      b: parseInt($("#wBronze").val() || 1, 10),
+      id: $tr.data("id"),
+      type,
+      parentId,
+      age: ($tr.find(".inp-age").val() || "").trim(),
+      event: ($tr.find(".inp-event").val() || "").trim(),
+      name: $tr.find(".ath-name").text().trim(),
+      yob: ($tr.find(".inp-yob").val() || "").trim(),
+      team: ($tr.find(".inp-team").val() || "").trim(),
+      g1,
+      g2,
+      g3,
+      g4,
+      g5,
+      total,
+      rank: parseInt($tr.find(".rank-num").text().trim() || "0", 10),
+      medal: $tr.find(".medal").text().trim(),
     };
   }
 
-  // ===== Dòng VĐV =====
-  function rowData($tr) {
-    const g = parseInt($tr.find(".inp-medal.g").val() || 0, 10);
-    const s = parseInt($tr.find(".inp-medal.s").val() || 0, 10);
-    const b = parseInt($tr.find(".inp-medal.b").val() || 0, 10);
-    const w = weights();
-    const pts = g * w.g + s * w.s + b * w.b;
-    const sum = g + s + b;
-    const name = $tr.find(".ath-name").text().trim();
-    const yob = ($tr.find(".inp-yob").val() || "").trim();
-    const team = $tr.find(".inp-team").val().trim();
-    return { id: $tr.data("id"), name, team, yob, g, s, b, sum, pts };
-  }
+  // ======================
+  // Append team group (MASTER + SUB-ROWS)
+  // ======================
+  function appendTeamGroup({ age, event, team, members }) {
+    const $tb = $("#tblScores tbody");
+    const masterId = uid();
 
-  function recalcAthleteRow($tr) {
-    const d = rowData($tr);
-    $tr.find(".sum").text(d.sum);
-    $tr.find(".pts").text(d.pts);
-    $tr.attr("data-team", d.team);
-    return d;
-  }
+    $tb.append(
+      makeRowHtml({
+        id: masterId,
+        type: "master",
+        age,
+        event,
+        name: team ? `Đội ${team}` : members[0]?.name || "",
+        yob: "",
+        team,
+        g1: "",
+        g2: "",
+        g3: "",
+        g4: "",
+        g5: "",
+      })
+    );
 
-  function makeRowHtml(id, name, team, yob, g, s, b) {
-    return `
-      <tr data-id="${id}" data-team="${escapeAttr(team || "")}">
-        <td class="rank">–</td>
-        <td contenteditable="true" class="ath-name">${escapeHtml(
-          name || "Tên VĐV"
-        )}</td>
-        <td><input class="inp-yob" type="number" min="1900" max="2100" value="${escapeAttr(
-          yob || ""
-        )}" /></td>
-        <td><input class="inp-team" type="text" value="${escapeAttr(
-          team || ""
-        )}" /></td>
-        <td><input class="inp-medal g" type="number" min="0" value="${
-          g ?? 0
-        }" /></td>
-        <td><input class="inp-medal s" type="number" min="0" value="${
-          s ?? 0
-        }" /></td>
-        <td><input class="inp-medal b" type="number" min="0" value="${
-          b ?? 0
-        }" /></td>
-        <td class="sum">0</td>
-        <td class="pts col-pts">0</td>
-        <td class="medal-ctrl">
-          <button class="btn-inc" data-type="G">+V</button>
-          <button class="btn-inc" data-type="S">+B</button>
-          <button class="btn-inc" data-type="B">+Đ</button>
-        </td>
-        <td><button class="btnDelRow danger">Xoá</button></td>
-      </tr>`;
-  }
-
-  // ===== BXH VĐV & Đoàn =====
-  function sortAthletes() {
-    const $tbody = $("#tblAthletes tbody");
-    const $rows = $tbody.children("tr").get();
-    const m = mode();
-
-    $rows.sort((a, b) => {
-      const da = rowData($(a));
-      const db = rowData($(b));
-
-      if (m === "score") {
-        if (db.pts !== da.pts) return db.pts - da.pts;
-      }
-      if (db.g !== da.g) return db.g - da.g;
-      if (db.s !== da.s) return db.s - da.s;
-      if (db.b !== da.b) return db.b - da.b;
-
-      return da.name.localeCompare(db.name, "vi", { sensitivity: "base" });
-    });
-
-    $rows.forEach((tr, i) => {
-      tr.querySelector(".rank").textContent = i + 1;
-      $tbody.append(tr);
+    (members || []).forEach((m) => {
+      $tb.append(
+        makeRowHtml({
+          type: "member",
+          parentId: masterId,
+          age,
+          event,
+          name: m.name,
+          yob: m.yob,
+          team: m.team || team,
+        })
+      );
     });
   }
+  // ======================
+  // Append single row (thi cá nhân / cặp)
+  // ======================
+  function appendSingleRow({ age, event, name, yob, team }) {
+    const $tb = $("#tblScores tbody");
+    $tb.append(
+      makeRowHtml({
+        type: "single",
+        age,
+        event,
+        name,
+        yob,
+        team,
+        g1: "",
+        g2: "",
+        g3: "",
+        g4: "",
+        g5: "",
+      })
+    );
+  }
 
-  function aggregateTeams() {
-    const map = new Map();
-    $("#tblAthletes tbody tr").each(function () {
-      const d = rowData($(this));
-      if (!d.team) return;
-      if (!map.has(d.team)) {
-        map.set(d.team, { team: d.team, g: 0, s: 0, b: 0, sum: 0, pts: 0 });
-      }
-      const t = map.get(d.team);
-      t.g += d.g;
-      t.s += d.s;
-      t.b += d.b;
-      t.sum += d.sum;
-      t.pts += d.pts;
+  // ======================
+  // Recalc: total + ranking + medal
+  // ======================
+  function recalcAllScores() {
+    const $allRows = $("#tblScores tbody tr");
+
+    if ($allRows.length === 0) {
+      $("#tblMedalAthletes tbody").empty();
+      $("#tblMedalTeams tbody").empty();
+      rebuildFilters();
+      return;
+    }
+
+    const allowDoubleBronze = $("#chkDoubleBronze").is(":checked");
+
+    // Rows được xếp hạng: single + master
+    const $rows = $allRows.filter(function () {
+      const type = $(this).data("type") || "single";
+      return type !== "member";
     });
 
-    const m = mode();
-    return Array.from(map.values()).sort((a, b) => {
-      if (m === "score") {
-        if (b.pts !== a.pts) return b.pts - a.pts;
+    const groups = {};
+
+    $rows.each(function () {
+      const $tr = $(this);
+      const d = getRowData($tr);
+      const key = (d.age || "") + "||" + (d.event || "");
+      if (!groups[key]) groups[key] = [];
+      groups[key].push({ $tr, data: d });
+    });
+
+    Object.values(groups).forEach((list) => {
+      list.forEach((item) => {
+        item.data.total = computeTotalFromRow(item.$tr);
+      });
+
+      list.sort((a, b) => b.data.total - a.data.total);
+
+      list.forEach((item, idx) => {
+        const rank = idx + 1;
+        const d = item.data;
+        const $tr = item.$tr;
+
+        let medal = "";
+        if (d.total > 0) {
+          if (rank === 1) medal = "Vàng";
+          else if (rank === 2) medal = "Bạc";
+          else if (rank === 3) medal = "Đồng";
+        }
+
+        if (allowDoubleBronze && rank > 3 && d.total > 0) {
+          const prev = list[idx - 1];
+          if (prev && prev.data.total === d.total && rank <= 4) {
+            medal = "Đồng";
+          }
+        }
+
+        $tr.find(".rank-num").text(d.total > 0 ? rank : "");
+        $tr.find(".medal").text(medal);
+      });
+    });
+
+    // STT cho tất cả (kể cả member)
+    let stt = 1;
+    $("#tblScores tbody tr:visible").each(function () {
+      $(this).find(".stt").text(stt++);
+    });
+
+    rebuildMedalTables();
+    rebuildFilters();
+    applyFilters();
+  }
+
+  // ======================
+  // BXH huy chương: athletes + teams
+  // ======================
+  function rebuildMedalTables() {
+    const mapAth = new Map();
+    const mapTeam = new Map();
+
+    $("#tblScores tbody tr").each(function () {
+      const $tr = $(this);
+      const type = $tr.data("type") || "single";
+      if (type === "member") return;
+
+      const medal = $tr.find(".medal").text().trim();
+      if (!medal) return;
+
+      const medalKey =
+        medal === "Vàng"
+          ? "g"
+          : medal === "Bạc"
+          ? "s"
+          : medal === "Đồng"
+          ? "b"
+          : null;
+      if (!medalKey) return;
+
+      const team = ($tr.find(".inp-team").val() || "").trim();
+      if (!team) return;
+
+      if (type === "master") {
+        // MASTER: chia huy chương cho tất cả MEMBER
+        const id = $tr.data("id");
+        $(`#tblScores tbody tr[data-parent="${id}"]`).each(function () {
+          const $m = $(this);
+          const name = $m.find(".ath-name").text().replace(/^–\s*/, "").trim();
+          if (!name) return;
+          const teamName = ($m.find(".inp-team").val() || team).trim();
+
+          const athKey = name + "|" + teamName;
+          if (!mapAth.has(athKey)) {
+            mapAth.set(athKey, { name, team: teamName, g: 0, s: 0, b: 0 });
+          }
+          mapAth.get(athKey)[medalKey]++;
+        });
+
+        const teamKey = team;
+        if (!mapTeam.has(teamKey)) {
+          mapTeam.set(teamKey, { team, g: 0, s: 0, b: 0 });
+        }
+        mapTeam.get(teamKey)[medalKey]++;
+      } else {
+        // SINGLE: có thể là cá nhân hoặc đội gộp bằng dấu "/"
+        const rawName = $tr.find(".ath-name").text().trim();
+        if (!rawName) return;
+
+        const names = rawName
+          .split("/")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const listNames = names.length ? names : [rawName];
+
+        listNames.forEach((name) => {
+          const athKey = name + "|" + team;
+          if (!mapAth.has(athKey)) {
+            mapAth.set(athKey, { name, team, g: 0, s: 0, b: 0 });
+          }
+          mapAth.get(athKey)[medalKey]++;
+        });
+
+        const teamKey = team;
+        if (!mapTeam.has(teamKey)) {
+          mapTeam.set(teamKey, { team, g: 0, s: 0, b: 0 });
+        }
+        mapTeam.get(teamKey)[medalKey]++;
       }
+    });
+
+    const athList = Array.from(mapAth.values()).map((a) => ({
+      ...a,
+      sum: a.g + a.s + a.b,
+    }));
+    const teamList = Array.from(mapTeam.values()).map((t) => ({
+      ...t,
+      sum: t.g + t.s + t.b,
+    }));
+
+    const sortAth = (a, b) => {
+      if (b.g !== a.g) return b.g - a.g;
+      if (b.s !== a.s) return b.s - a.s;
+      if (b.b !== a.b) return b.b - a.b;
+      return a.name.localeCompare(b.name, "vi", { sensitivity: "base" });
+    };
+    athList.sort(sortAth);
+
+    const sortTeam = (a, b) => {
       if (b.g !== a.g) return b.g - a.g;
       if (b.s !== a.s) return b.s - a.s;
       if (b.b !== a.b) return b.b - a.b;
       return a.team.localeCompare(b.team, "vi", { sensitivity: "base" });
-    });
-  }
+    };
+    teamList.sort(sortTeam);
 
-  function renderTeams() {
-    const teams = aggregateTeams();
-    const $tb = $("#tblTeams tbody").empty();
-    teams.forEach((t, idx) => {
-      const tr = `
+    const $tbAth = $("#tblMedalAthletes tbody").empty();
+    athList.forEach((a, idx) => {
+      $tbAth.append(`
+        <tr>
+          <td class="rank">${idx + 1}</td>
+          <td>${a.name}</td>
+          <td>${a.team}</td>
+          <td>${a.g}</td>
+          <td>${a.s}</td>
+          <td>${a.b}</td>
+          <td>${a.sum}</td>
+        </tr>
+      `);
+    });
+
+    const $tbTeam = $("#tblMedalTeams tbody").empty();
+    teamList.forEach((t, idx) => {
+      $tbTeam.append(`
         <tr>
           <td class="rank">${idx + 1}</td>
           <td>${t.team}</td>
@@ -203,237 +484,516 @@
           <td>${t.s}</td>
           <td>${t.b}</td>
           <td>${t.sum}</td>
-          <td class="pts col-pts">${t.pts}</td>
-        </tr>`;
-      $tb.append(tr);
+        </tr>
+      `);
     });
   }
 
-  function recalcAll() {
-    $("#tblAthletes tbody tr").each(function () {
-      recalcAthleteRow($(this));
-    });
-    if (!isTyping) {
-      sortAthletes();
-    }
-    renderTeams();
-    applyModeUI();
-  }
-
-  // ===== State (localStorage / JSON) =====
+  // ======================
+  // LocalStorage
+  // ======================
   function collectState() {
+    const rows = $("#tblScores tbody tr")
+      .map(function () {
+        const d = getRowData($(this));
+        return {
+          id: d.id,
+          type: d.type,
+          parentId: d.parentId,
+          age: d.age,
+          event: d.event,
+          name: d.name,
+          yob: d.yob,
+          team: d.team,
+          g1: d.g1,
+          g2: d.g2,
+          g3: d.g3,
+          g4: d.g4,
+          g5: d.g5,
+        };
+      })
+      .get();
+
     return {
-      version: APP_VERSION,
-      mode: mode(),
-      weights: weights(),
-      athletes: $("#tblAthletes tbody tr")
-        .map(function () {
-          const d = rowData($(this));
-          return {
-            id: d.id,
-            name: d.name,
-            team: d.team,
-            yob: d.yob,
-            g: d.g,
-            s: d.s,
-            b: d.b,
-          };
-        })
-        .get(),
+      version: 2,
+      rows,
+      doubleBronze: $("#chkDoubleBronze").is(":checked"),
     };
   }
 
   function applyState(data) {
     if (!data) return;
-
-    if (data.mode) {
-      $('input[name="calcMode"][value="' + data.mode + '"]').prop(
-        "checked",
-        true
-      );
-    }
-
-    const w = data.weights || data.w;
-    if (w) {
-      $("#wGold").val(w.g ?? 3);
-      $("#wSilver").val(w.s ?? 2);
-      $("#wBronze").val(w.b ?? 1);
-    }
-
-    const list = data.athletes || data.rows || [];
-    const $tb = $("#tblAthletes tbody").empty();
-    list.forEach((r) => {
-      $tb.append(
-        makeRowHtml(
-          r.id || uid(),
-          r.name || "",
-          r.team || "",
-          r.yob || "",
-          r.g || 0,
-          r.s || 0,
-          r.b || 0
-        )
-      );
+    const $tb = $("#tblScores tbody").empty();
+    (data.rows || []).forEach((r) => {
+      $tb.append(makeRowHtml(r));
     });
-
-    recalcAll();
+    $("#chkDoubleBronze").prop("checked", !!data.doubleBronze);
+    recalcAllScores();
   }
 
   function saveToLocal() {
     try {
       const payload = collectState();
       localStorage.setItem(LS_KEY, JSON.stringify(payload));
+      toast("Đã lưu dữ liệu vào máy.");
     } catch (e) {
-      console.error("Save local failed", e);
-      toast(
-        "Không lưu được vào máy. Có thể localStorage bị chặn hoặc đầy.",
-        true
-      );
+      console.error(e);
+      toast("Không lưu được vào máy (localStorage bị chặn hoặc đầy).", true);
     }
   }
 
   function loadFromLocal() {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) {
-      recalcAll();
-      return;
-    }
     try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
       const data = JSON.parse(raw);
+      if (!data || !data.rows) return;
       applyState(data);
     } catch (e) {
       console.warn("Load local failed", e);
-      recalcAll();
     }
   }
 
-  function dumpJson() {
-    return collectState();
+  // ======================
+  // Filters Age / Event
+  // ======================
+  function rebuildFilters() {
+    const ages = new Set();
+    const evs = new Set();
+
+    $("#tblScores tbody tr")
+      .filter(function () {
+        const type = $(this).data("type") || "single";
+        return type !== "member"; // chỉ master + single để tránh trùng
+      })
+      .each(function () {
+        const age = ($(this).find(".inp-age").val() || "").trim();
+        const ev = ($(this).find(".inp-event").val() || "").trim();
+        if (age) ages.add(age);
+        if (ev) evs.add(ev);
+      });
+
+    const $age = $("#filterAge");
+    const curAge = $age.val() || "";
+    $age.empty().append('<option value="">Tất cả lứa tuổi</option>');
+    Array.from(ages)
+      .sort((a, b) => a.localeCompare(b, "vi", { sensitivity: "base" }))
+      .forEach((age) => {
+        $age.append(`<option value="${age}">${age}</option>`);
+      });
+    if (curAge && ages.has(curAge)) $age.val(curAge);
+
+    const $ev = $("#filterEvent");
+    const curEv = $ev.val() || "";
+    $ev.empty().append('<option value="">Tất cả nội dung</option>');
+    Array.from(evs)
+      .sort((a, b) => a.localeCompare(b, "vi", { sensitivity: "base" }))
+      .forEach((ev) => {
+        $ev.append(`<option value="${ev}">${ev}</option>`);
+      });
+    if (curEv && evs.has(curEv)) $ev.val(curEv);
   }
 
-  // ===== Import Excel / CSV =====
-  function isSameAthlete(aName, aTeam, aYob, bName, bTeam, bYob) {
-    const na = normalizeStr(aName);
-    const ta = normalizeStr(aTeam);
-    const nb = normalizeStr(bName);
-    const tb = normalizeStr(bTeam);
+  function applyFilters() {
+    const fAge = $("#filterAge").val() || "";
+    const fEv = $("#filterEvent").val() || "";
 
-    if (!na || !nb || na !== nb) return false;
-    if (ta !== tb) return false;
+    $("#tblScores tbody tr").each(function () {
+      const age = ($(this).find(".inp-age").val() || "").trim();
+      const ev = ($(this).find(".inp-event").val() || "").trim();
+      const okAge = !fAge || age === fAge;
+      const okEv = !fEv || ev === fEv;
+      $(this).toggle(okAge && okEv);
+    });
 
-    const ya = (aYob || "").toString().trim();
-    const yb = (bYob || "").toString().trim();
-
-    // 1 trong 2 không có năm sinh -> coi là trùng
-    if (!ya || !yb) return true;
-
-    // Cả 2 đều có năm sinh: chỉ trùng nếu bằng nhau
-    return ya === yb;
+    let idx = 1;
+    $("#tblScores tbody tr:visible").each(function () {
+      $(this).find(".stt").text(idx++);
+    });
   }
 
-  // Kiểm tra 1 VĐV đã tồn tại trong list hay chưa
-  function existsInList(list, name, team, yob) {
-    for (const it of list) {
-      if (isSameAthlete(name, team, yob, it.name, it.team, it.yob)) {
-        return true;
+  // ======================
+  // Export Excel
+  // ======================
+  function exportScoresToExcel() {
+    if (typeof XLSX === "undefined") {
+      toast("Không tìm thấy thư viện XLSX (excel.min.js).", true);
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const rows = [];
+
+    rows.push([
+      "STT",
+      "Lứa tuổi",
+      "Nội dung",
+      "VĐV",
+      "Năm sinh",
+      "Đơn vị",
+      "GĐ1",
+      "GĐ2",
+      "GĐ3",
+      "GĐ4",
+      "GĐ5",
+      "Tổng điểm",
+      "Xếp hạng",
+      "Thành tích",
+      "Loại dòng",
+    ]);
+
+    $("#tblScores tbody tr").each(function (idx) {
+      const $tr = $(this);
+      const d = getRowData($tr);
+      const rankText = $tr.find(".rank-num").text().trim();
+      const medal = $tr.find(".medal").text().trim();
+      const type = $tr.data("type") || "single";
+
+      rows.push([
+        idx + 1,
+        d.age,
+        d.event,
+        d.name,
+        d.yob,
+        d.team,
+        d.g1,
+        d.g2,
+        d.g3,
+        d.g4,
+        d.g5,
+        d.total,
+        rankText,
+        medal,
+        type,
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Scores");
+    XLSX.writeFile(wb, "vovinam_scores.xlsx");
+  }
+
+  // ======================
+  // Import Excel dạng đăng ký 5 cột
+  // (Lứa tuổi, Nội dung, Tên VĐV, Năm sinh, Đơn vị)
+  // ======================
+  function importRegistrationFormat(rows) {
+    const $tb = $("#tblScores tbody");
+
+    // 1) Đọc dữ liệu hiện có để tránh trùng VĐV cá nhân
+    const existingSingles = new Set();
+    $tb.find("tr").each(function () {
+      const d = getRowData($(this));
+      if ((d.type || "single") !== "single") return;
+      const key =
+        normalizeStr(d.age) +
+        "|" +
+        normalizeStr(d.event) +
+        "|" +
+        normalizeStr(d.name) +
+        "|" +
+        (d.yob || "") +
+        "|" +
+        normalizeStr(d.team);
+      existingSingles.add(key);
+    });
+
+    // 2) Parse file Excel thành list dòng đăng ký
+    const regRows = [];
+    let curAge = "";
+    let curEvent = "";
+
+    rows.forEach((rowRaw, idx) => {
+      const row =
+        rowRaw && rowRaw.map
+          ? rowRaw.map((c) =>
+              c === undefined || c === null ? "" : String(c).trim()
+            )
+          : [];
+
+      if (!row.length) return;
+      while (row.length < 5) row.push("");
+
+      const colAge = row[0] || "";
+      const colEvent = row[1] || "";
+      const colName = row[2] || "";
+      const colYob = row[3] || "";
+      const colTeam = row[4] || "";
+
+      // Bỏ dòng header
+      if (
+        idx === 0 &&
+        /lứa tuổi/i.test(colAge || "") &&
+        /nội dung/i.test(colEvent || "")
+      ) {
+        return;
       }
+      // Bỏ dòng trống
+      if (!colAge && !colEvent && !colName && !colYob && !colTeam) return;
+
+      if (colAge) curAge = colAge;
+      if (colEvent) curEvent = colEvent;
+      if (!colName) return;
+
+      regRows.push({
+        age: curAge,
+        event: curEvent,
+        name: colName,
+        yob: colYob,
+        rawTeam: colTeam, // team đúng như trong file (có thể trống)
+      });
+    });
+
+    // 3) Duyệt list và build bảng: singles + team (Song luyện / Đồng đội)
+    let addedSingles = 0;
+    let skippedSingles = 0;
+    let addedTeams = 0;
+
+    let i = 0;
+    while (i < regRows.length) {
+      const r = regRows[i];
+      const normEvent = normalizeStr(r.event);
+      const isTeamEvent =
+        normEvent.includes("song luyen") || normEvent.includes("dong doi");
+
+      // ===== Nội dung CÁ NHÂN / hoặc không có team =====
+      if (!isTeamEvent || !r.rawTeam) {
+        const key =
+          normalizeStr(r.age) +
+          "|" +
+          normalizeStr(r.event) +
+          "|" +
+          normalizeStr(r.name) +
+          "|" +
+          (r.yob || "") +
+          "|" +
+          normalizeStr(r.rawTeam || "");
+
+        if (existingSingles.has(key)) {
+          skippedSingles++;
+        } else {
+          existingSingles.add(key);
+          appendSingleRow({
+            age: r.age,
+            event: r.event,
+            name: r.name,
+            yob: r.yob,
+            team: r.rawTeam || "",
+          });
+          addedSingles++;
+        }
+
+        i++;
+        continue;
+      }
+
+      // ===== Nội dung ĐỒNG ĐỘI / SONG LUYỆN =====
+      // r.rawTeam chắc chắn có giá trị -> bắt đầu 1 đội mới
+      const teamName = r.rawTeam;
+      const group = {
+        age: r.age,
+        event: r.event,
+        team: teamName,
+        members: [
+          {
+            name: r.name,
+            yob: r.yob,
+            team: teamName,
+          },
+        ],
+      };
+      i++;
+
+      // Gom các thành viên tiếp theo cùng event, không có rawTeam (ô Đơn vị trống)
+      while (i < regRows.length) {
+        const r2 = regRows[i];
+        const normEvent2 = normalizeStr(r2.event);
+
+        // Khác nội dung hoặc xuất hiện rawTeam mới -> dừng block hiện tại
+        if (normEvent2 !== normEvent || r2.rawTeam) break;
+
+        group.members.push({
+          name: r2.name,
+          yob: r2.yob,
+          team: teamName,
+        });
+        i++;
+      }
+
+      appendTeamGroup(group);
+      addedTeams++;
     }
-    return false;
+
+    // 4) Hoàn tất
+    if (addedSingles > 0 || addedTeams > 0) {
+      recalcAllScores();
+      const parts = [];
+      if (addedSingles) parts.push(`${addedSingles} VĐV/cặp`);
+      if (addedTeams) parts.push(`${addedTeams} đội`);
+      let msg = "Đã thêm " + parts.join(" + ") + " từ file đăng ký.";
+      if (skippedSingles) msg += ` Bỏ qua ${skippedSingles} dòng cá nhân trùng.`;
+      toast(msg);
+    } else if (skippedSingles > 0) {
+      toast("Tất cả các dòng cá nhân trong file đã có trong bảng.", true);
+    } else {
+      toast("Không tìm thấy dòng hợp lệ trong file đăng ký.", true);
+    }
   }
 
-  // ===== Import Excel / CSV =====
-  function importAthletesFrom2D(rows) {
+
+  function importScore14ColsFormat(rows) {
+    const $tb = $("#tblScores tbody");
+
+    const existingKeys = new Set();
+    $tb.find("tr").each(function () {
+      const d = getRowData($(this));
+      const key =
+        "single|" +
+        normalizeStr(d.age) +
+        "|" +
+        normalizeStr(d.event) +
+        "|" +
+        normalizeStr(d.name) +
+        "|" +
+        (d.yob || "") +
+        "|" +
+        normalizeStr(d.team);
+      existingKeys.add(key);
+    });
+
+    let added = 0;
+    let skipped = 0;
+
+    const parseScore = (v) => {
+      if (v === undefined || v === null || v === "") return "";
+      const num = parseFloat(String(v).replace(",", "."));
+      return isNaN(num) ? "" : num;
+    };
+
+    rows.forEach((rowRaw) => {
+      const row =
+        rowRaw && rowRaw.map
+          ? rowRaw.map((c) =>
+              c === undefined || c === null ? "" : String(c).trim()
+            )
+          : [];
+
+      if (!row.length || row.every((c) => c === "")) return;
+
+      const joined = row.join(" ").toLowerCase();
+      if (
+        joined.includes("stt") &&
+        (joined.includes("vđv") ||
+          joined.includes("ten vdv") ||
+          joined.includes("tên vđv"))
+      ) {
+        return;
+      }
+
+      while (row.length < 14) row.push("");
+
+      const age = row[1] || "";
+      const event = row[2] || "";
+      const name = row[3] || "";
+      const yob = row[4] || "";
+      const team = row[5] || "";
+      if (!name) return;
+
+      const g1 = parseScore(row[6]);
+      const g2 = parseScore(row[7]);
+      const g3 = parseScore(row[8]);
+      const g4 = parseScore(row[9]);
+      const g5 = parseScore(row[10]);
+
+      const key =
+        "single|" +
+        normalizeStr(age) +
+        "|" +
+        normalizeStr(event) +
+        "|" +
+        normalizeStr(name) +
+        "|" +
+        (yob || "") +
+        "|" +
+        normalizeStr(team);
+
+      if (existingKeys.has(key)) {
+        skipped++;
+        return;
+      }
+      existingKeys.add(key);
+      added++;
+
+      $tb.append(
+        makeRowHtml({
+          type: "single",
+          age,
+          event,
+          name,
+          yob,
+          team,
+          g1: g1 === "" ? "" : g1,
+          g2: g2 === "" ? "" : g2,
+          g3: g3 === "" ? "" : g3,
+          g4: g4 === "" ? "" : g4,
+          g5: g5 === "" ? "" : g5,
+        })
+      );
+    });
+
+    if (added > 0) {
+      recalcAllScores();
+      const msg = skipped
+        ? `Đã thêm ${added} dòng mới từ file 14 cột, bỏ qua ${skipped} dòng trùng.`
+        : `Đã thêm ${added} dòng mới từ file 14 cột.`;
+      toast(msg);
+    } else if (skipped > 0) {
+      toast("Tất cả các dòng trong file 14 cột đã có trong bảng.", true);
+    } else {
+      toast("Không tìm thấy dòng hợp lệ trong file 14 cột.", true);
+    }
+  }
+
+  function importScoresFrom2D(rows) {
     if (!rows || !rows.length) {
       toast("File không có dữ liệu.", true);
       return;
     }
 
-    const $tb = $("#tblAthletes tbody");
-
-    // Lấy danh sách VĐV đang có trên bảng (trước khi import)
-    const existingList = [];
-    $tb.find("tr").each(function () {
-      const $tr = $(this);
-      const d = rowData($tr); // đã có name, team, yob bên trong
-      if (d.name) {
-        existingList.push({
-          name: d.name,
-          team: d.team,
-          yob: d.yob,
-        });
-      }
-    });
-
-    // List VĐV được thêm trong LẦN IMPORT NÀY (chống trùng trong chính file)
-    const sessionList = [];
-
-    let added = 0;
-    let skipped = 0;
-
-    rows.forEach((row, idx) => {
-      if (!row || !row.length) return;
-
-      const rawName = (row[0] || "").toString().trim(); // cột A: Tên VĐV
-      const rawTeam = (row[1] || "").toString().trim(); // cột B: Đoàn
-      const rawYob = (row[2] || "").toString().trim(); // cột C: Năm sinh (có cũng được, không có cũng ok)
-
-      if (!rawName) return;
-
-      // Bỏ qua header
-      if (idx === 0) {
-        const lowerName = rawName.toLowerCase();
-        if (
-          lowerName.includes("tên") ||
-          lowerName.includes("họ tên") ||
-          lowerName.includes("họ tên") ||
-          lowerName.includes("name")
-        ) {
-          return;
-        }
-      }
-
-      // Nếu đã tồn tại trên bảng HOẶC trong lần import này -> bỏ qua
+    let first = null;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i] || [];
       if (
-        existsInList(existingList, rawName, rawTeam, rawYob) ||
-        existsInList(sessionList, rawName, rawTeam, rawYob)
+        r.some((c) => c !== null && c !== undefined && String(c).trim() !== "")
       ) {
-        skipped++;
-        return;
+        first = { idx: i, row: r };
+        break;
       }
-
-      const id = uid();
-      $tb.append(makeRowHtml(id, rawName, rawTeam, rawYob, 0, 0, 0));
-
-      sessionList.push({
-        name: rawName,
-        team: rawTeam,
-        yob: rawYob,
-      });
-
-      added++;
-    });
-
-    if (added > 0) {
-      recalcAll();
-      saveToLocal();
+    }
+    if (!first) {
+      toast("File toàn dòng trống.", true);
+      return;
     }
 
-    if (!added && !skipped) {
-      toast("Không tìm thấy dòng VĐV hợp lệ trong file.", true);
+    const r0 = first.row.map((c) =>
+      c === undefined || c === null ? "" : String(c).trim()
+    );
+
+    const isReg =
+      /lứa tuổi/i.test(r0[0] || "") && /nội dung/i.test(r0[1] || "");
+
+    if (isReg) {
+      importRegistrationFormat(rows);
     } else {
-      const msg = skipped
-        ? `Đã thêm ${added} VĐV mới. Bỏ qua ${skipped} dòng trùng theo Tên/Đoàn/Năm sinh.`
-        : `Đã thêm ${added} VĐV mới từ file.`;
-      toast(msg);
+      importScore14ColsFormat(rows);
     }
   }
 
-  function handleImportFile(file) {
+  function handleImportScoresFile(file) {
     if (!file) return;
 
     const ext = (file.name.split(".").pop() || "").toLowerCase();
 
-    // CSV
     if (ext === "csv") {
       const reader = new FileReader();
       reader.onload = function (ev) {
@@ -442,265 +1002,127 @@
         const rows = lines
           .map((line) => line.split(/,|;|\t/))
           .filter((r) => r.some((cell) => (cell || "").trim() !== ""));
-        importAthletesFrom2D(rows);
+        importScoresFrom2D(rows);
       };
       reader.readAsText(file, "utf-8");
       return;
     }
 
-    // Excel
     if (typeof XLSX === "undefined") {
-      toast(
-        "Không tìm thấy thư viện XLSX. Kiểm tra lại thẻ script import XLSX.",
-        true
-      );
+      toast("Không tìm thấy thư viện XLSX (excel.min.js).", true);
       return;
     }
 
     const reader = new FileReader();
     reader.onload = function (ev) {
       const data = new Uint8Array(ev.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-
-      if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      const wb = XLSX.read(data, { type: "array" });
+      if (!wb.SheetNames || !wb.SheetNames.length) {
         toast("File Excel không có sheet nào.", true);
         return;
       }
-
-      const firstSheetName = workbook.SheetNames[0];
-      const ws = workbook.Sheets[firstSheetName];
+      const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-      importAthletesFrom2D(rows);
+      importScoresFrom2D(rows);
     };
     reader.readAsArrayBuffer(file);
   }
 
-  // ===== CSV Export =====
-  function csvEsc(s) {
-    s = (s ?? "").toString();
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  }
-
-  function buildCsv() {
-    const m = mode();
-    let a =
-      m === "score"
-        ? "Rank,Name,BirthYear,Team,Gold,Silver,Bronze,Total,Points\n"
-        : "Rank,Name,BirthYear,Team,Gold,Silver,Bronze,Total\n";
-
-    $("#tblAthletes tbody tr").each(function () {
-      const d = rowData($(this));
-      const rank = $(this).find(".rank").text().trim() || "";
-      a +=
-        m === "score"
-          ? [
-              rank,
-              csvEsc(d.name),
-              csvEsc(d.yob),
-              csvEsc(d.team),
-              d.g,
-              d.s,
-              d.b,
-              d.sum,
-              d.pts,
-            ].join(",") + "\n"
-          : [
-              rank,
-              csvEsc(d.name),
-              csvEsc(d.yob),
-              csvEsc(d.team),
-              d.g,
-              d.s,
-              d.b,
-              d.sum,
-            ].join(",") + "\n";
-    });
-
-    let t =
-      m === "score"
-        ? "Rank,Team,Gold,Silver,Bronze,Total,Points\n"
-        : "Rank,Team,Gold,Silver,Bronze,Total\n";
-
-    $("#tblTeams tbody tr").each(function () {
-      const rank = $(this).find(".rank").text().trim();
-      const cells = $(this).children("td");
-      const team = cells.eq(1).text().trim();
-      const g = cells.eq(2).text().trim();
-      const s = cells.eq(3).text().trim();
-      const b = cells.eq(4).text().trim();
-      const sum = cells.eq(5).text().trim();
-      const pts = cells.eq(6).text().trim();
-      t +=
-        m === "score"
-          ? [rank, csvEsc(team), g, s, b, sum, pts].join(",") + "\n"
-          : [rank, csvEsc(team), g, s, b, sum].join(",") + "\n";
-    });
-
-    return { csvAthletes: a, csvTeams: t };
-  }
-
-  function download(filename, text) {
-    const BOM = "\uFEFF";
-    const blob = new Blob([BOM + text], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ===== Events =====
-  // Focus-lock
-  $(document).on(
-    "focusin",
-    ".ath-name, .inp-team, .inp-yob, .inp-medal",
-    function () {
-      isTyping = true;
-    }
-  );
-
-  $(document).on(
-    "blur",
-    ".ath-name, .inp-team, .inp-yob, .inp-medal",
-    function () {
-      isTyping = false;
-      recalcAll();
-      saveToLocal();
-    }
-  );
-
-  // Thay đổi số/đội/trọng số
+  // ======================
+  // Events
+  // ======================
   $(document).on(
     "input change",
-    ".inp-medal, .inp-team, .inp-yob, #wGold, #wSilver, #wBronze",
+    ".inp-age, .inp-event, .inp-yob, .inp-team, .inp-g",
     function () {
-      const $tr = $(this).closest("tr");
-      if ($tr.length) {
-        recalcAthleteRow($tr);
-      }
-      if (!isTyping) {
-        sortAthletes();
-      }
-      renderTeams();
-      saveToLocal();
+      recalcAllScores();
     }
   );
 
-  // Tên VĐV: recalc, sort khi blur (ở trên)
   $(document).on("input", ".ath-name", function () {
-    const $tr = $(this).closest("tr");
-    recalcAthleteRow($tr);
-    renderTeams();
-  });
-
-  // Nút tăng nhanh
-  $(document).on("click", ".btn-inc", function () {
-    const type = $(this).data("type"); // G S B
-    const $tr = $(this).closest("tr");
-    const cls = type === "G" ? ".g" : type === "S" ? ".s" : ".b";
-    const $inp = $tr.find(".inp-medal" + cls);
-    const val = parseInt($inp.val() || 0, 10) + 1;
-    $inp.val(val);
-    isTyping = false;
-    recalcAll();
-    saveToLocal();
-  });
-
-  // Thêm / xoá dòng
-  $("#btnAddRow").on("click", function () {
-    $("#tblAthletes tbody").append(
-      makeRowHtml(uid(), "VĐV mới", "", "", 0, 0, 0)
-    );
-    recalcAll();
-    saveToLocal();
+    recalcAllScores();
   });
 
   $(document).on("click", ".btnDelRow", function () {
-    $(this).closest("tr").remove();
-    recalcAll();
-    saveToLocal();
+    const $tr = $(this).closest("tr");
+    const type = $tr.data("type") || "single";
+    if (type === "master") {
+      const id = $tr.data("id");
+      $(`#tblScores tbody tr[data-parent="${id}"]`).remove();
+    }
+    $tr.remove();
+    recalcAllScores();
   });
 
-  // Tìm kiếm
-  $("#search").on("input", function () {
-    const q = normalizeStr($(this).val());
-    $("#tblAthletes tbody tr").each(function () {
-      const name = normalizeStr($(this).find(".ath-name").text());
-      const team = normalizeStr($(this).find(".inp-team").val());
-      const yob = normalizeStr($(this).find(".inp-yob").val());
-      $(this).toggle(
-        !q || name.includes(q) || team.includes(q) || yob.includes(q)
-      );
-    });
+  $("#btnAddRow").on("click", function () {
+    $("#tblScores tbody").append(
+      makeRowHtml({
+        type: "single",
+        age: "",
+        event: "",
+        name: "",
+        yob: "",
+        team: "",
+        g1: "",
+        g2: "",
+        g3: "",
+        g4: "",
+        g5: "",
+      })
+    );
+    recalcAllScores();
   });
 
-  // Lưu / reset local
+  $("#chkDoubleBronze").on("change", function () {
+    recalcAllScores();
+  });
+
+  $("#filterAge, #filterEvent").on("change", function () {
+    applyFilters();
+  });
+
   $("#btnSave").on("click", function () {
     saveToLocal();
-    toast("Đã lưu vào máy.");
   });
 
   $("#btnReset").on("click", function () {
-    if (confirm("Xoá toàn bộ dữ liệu đang lưu trong máy?")) {
-      localStorage.removeItem(LS_KEY);
-      location.reload();
+    if (
+      confirm(
+        "Xoá toàn bộ dữ liệu trên bảng và trong máy (localStorage)? Thao tác này không thể hoàn tác."
+      )
+    ) {
+      $("#tblScores tbody").empty();
+      $("#tblMedalAthletes tbody").empty();
+      $("#tblMedalTeams tbody").empty();
+      try {
+        localStorage.removeItem(LS_KEY);
+      } catch (e) {
+        console.warn(e);
+      }
+      rebuildFilters();
     }
   });
 
-  // JSON xuất / nhập
-  $("#btnDump").on("click", function () {
-    $("#ioJson").val(JSON.stringify(dumpJson(), null, 2));
-    toast("Đã xuất JSON bên dưới.");
+  $("#btnExportScores").on("click", function () {
+    exportScoresToExcel();
   });
 
-  $("#btnLoad").on("click", function () {
-    const raw = $("#ioJson").val().trim();
-    if (!raw) {
-      toast("Chưa có JSON để nhập.", true);
-      return;
-    }
-    try {
-      const data = JSON.parse(raw);
-      applyState(data);
-      saveToLocal();
-      toast("Đã nhập JSON.");
-    } catch (e) {
-      toast("JSON không hợp lệ.", true);
-    }
+  $("#btnImportScores").on("click", function () {
+    $("#fileImportScores").val("");
+    $("#fileImportScores").trigger("click");
   });
 
-  // Export CSV
-  $("#btnExportCsv").on("click", function () {
-    const { csvAthletes, csvTeams } = buildCsv();
-    download("athletes.csv", csvAthletes);
-    download("teams.csv", csvTeams);
-  });
-
-  // Đổi mode tính
-  $(document).on("change", 'input[name="calcMode"]', function () {
-    applyModeUI();
-    recalcAll();
-    saveToLocal();
-  });
-
-  // Import Excel
-  $("#btnImport").on("click", function () {
-    $("#fileImport").trigger("click");
-  });
-
-  $("#fileImport").on("change", function (e) {
+  $("#fileImportScores").on("change", function (e) {
     const file = e.target.files[0];
-    if (file) {
-      handleImportFile(file);
-    }
+    if (file) handleImportScoresFile(file);
     $(this).val("");
   });
 
-  // ===== init =====
+  // ======================
+  // Init
+  // ======================
   $(function () {
     loadFromLocal();
-    applyModeUI();
+    recalcAllScores();
   });
 })(jQuery);
