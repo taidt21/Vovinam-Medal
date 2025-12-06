@@ -10,16 +10,15 @@
     return "r" + Math.random().toString(36).slice(2, 9);
   }
 
-function normalizeStr(str) {
-  return (str || "")
-    .toString()
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
-    .replace(/đ/g, "d");             // chuyển đ -> d để bắt được "dong doi"
-}
-
+  function normalizeStr(str) {
+    return (str || "")
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "") // bỏ dấu
+      .replace(/đ/g, "d"); // chuyển đ -> d để bắt được "dong doi"
+  }
 
   function toast(msg, isErr) {
     const el = $("<div/>")
@@ -288,75 +287,112 @@ function normalizeStr(str) {
   // ======================
   // Recalc: total + ranking + medal
   // ======================
-  function recalcAllScores() {
-    const $allRows = $("#tblScores tbody tr");
+function recalcAllScores() {
+  const $allRows = $("#tblScores tbody tr");
 
-    if ($allRows.length === 0) {
-      $("#tblMedalAthletes tbody").empty();
-      $("#tblMedalTeams tbody").empty();
-      rebuildFilters();
-      return;
-    }
-
-    const allowDoubleBronze = $("#chkDoubleBronze").is(":checked");
-
-    // Rows được xếp hạng: single + master
-    const $rows = $allRows.filter(function () {
-      const type = $(this).data("type") || "single";
-      return type !== "member";
-    });
-
-    const groups = {};
-
-    $rows.each(function () {
-      const $tr = $(this);
-      const d = getRowData($tr);
-      const key = (d.age || "") + "||" + (d.event || "");
-      if (!groups[key]) groups[key] = [];
-      groups[key].push({ $tr, data: d });
-    });
-
-    Object.values(groups).forEach((list) => {
-      list.forEach((item) => {
-        item.data.total = computeTotalFromRow(item.$tr);
-      });
-
-      list.sort((a, b) => b.data.total - a.data.total);
-
-      list.forEach((item, idx) => {
-        const rank = idx + 1;
-        const d = item.data;
-        const $tr = item.$tr;
-
-        let medal = "";
-        if (d.total > 0) {
-          if (rank === 1) medal = "Vàng";
-          else if (rank === 2) medal = "Bạc";
-          else if (rank === 3) medal = "Đồng";
-        }
-
-        if (allowDoubleBronze && rank > 3 && d.total > 0) {
-          const prev = list[idx - 1];
-          if (prev && prev.data.total === d.total && rank <= 4) {
-            medal = "Đồng";
-          }
-        }
-
-        $tr.find(".rank-num").text(d.total > 0 ? rank : "");
-        $tr.find(".medal").text(medal);
-      });
-    });
-
-    // STT cho tất cả (kể cả member)
-    let stt = 1;
-    $("#tblScores tbody tr:visible").each(function () {
-      $(this).find(".stt").text(stt++);
-    });
-
-    rebuildMedalTables();
+  if ($allRows.length === 0) {
+    $("#tblMedalAthletes tbody").empty();
+    $("#tblMedalTeams tbody").empty();
     rebuildFilters();
-    applyFilters();
+    return;
   }
+
+  const allowDoubleBronze = $("#chkDoubleBronze").is(":checked");
+
+  // Xóa highlight tie cũ (nếu bạn đã dùng score-tie)
+  $allRows.removeClass("score-tie");
+
+  // Chỉ xếp hạng cho single + master
+  const $rows = $allRows.filter(function () {
+    const type = $(this).data("type") || "single";
+    return type !== "member";
+  });
+
+  const groups = {};
+
+  // Gom nhóm theo Lứa tuổi + Nội dung
+  $rows.each(function () {
+    const $tr = $(this);
+    const d = getRowData($tr);
+    const key = (d.age || "") + "||" + (d.event || "");
+    if (!groups[key]) groups[key] = [];
+    groups[key].push({ $tr, data: d });
+  });
+
+  Object.values(groups).forEach((list) => {
+    // Tính tổng điểm cho từng dòng
+    list.forEach((item) => {
+      item.data.total = computeTotalFromRow(item.$tr);
+    });
+
+    // Map tổng điểm -> các dòng cùng tổng (để highlight tie)
+    const tieMap = new Map();
+    list.forEach((item) => {
+      const t = item.data.total;
+      if (!t || t <= 0) return;
+      const k = t.toFixed(2);
+      if (!tieMap.has(k)) tieMap.set(k, []);
+      tieMap.get(k).push(item);
+    });
+
+    // Sắp xếp để xếp hạng (từ cao xuống)
+    list.sort((a, b) => b.data.total - a.data.total);
+
+    // Gán rank + medal (tự động) rồi áp dụng override nếu có
+    list.forEach((item, idx) => {
+      const d = item.data;
+      const $tr = item.$tr;
+
+      const rank = d.total > 0 ? idx + 1 : "";
+      let medal = "";
+
+      if (d.total > 0) {
+        if (rank === 1) medal = "Vàng";
+        else if (rank === 2) medal = "Bạc";
+        else if (rank === 3) medal = "Đồng";
+      }
+
+      // Đồng huy chương Đồng (nếu bật checkbox)
+      if (allowDoubleBronze && rank > 3 && d.total > 0) {
+        const prev = list[idx - 1];
+        if (prev && prev.data.total === d.total && rank <= 4) {
+          medal = "Đồng";
+        }
+      }
+
+      // Set rank
+      $tr.find(".rank-num").text(rank);
+
+      // Nếu dòng này có đặt huy chương tay -> dùng huy chương tay
+      const manual = $tr.attr("data-manual-medal");
+      if (manual && manual.trim().length > 0) {
+        $tr.find(".medal").text(manual.trim());
+      } else {
+        $tr.find(".medal").text(medal);
+      }
+    });
+
+    // Highlight các dòng có cùng tổng điểm (nếu bạn muốn)
+    tieMap.forEach((itemsWithSameScore) => {
+      if (itemsWithSameScore.length >= 2) {
+        itemsWithSameScore.forEach((item) => {
+          item.$tr.addClass("score-tie");
+        });
+      }
+    });
+  });
+
+  // STT cho tất cả (kể cả member)
+  let stt = 1;
+  $("#tblScores tbody tr:visible").each(function () {
+    $(this).find(".stt").text(stt++);
+  });
+
+  rebuildMedalTables();
+  rebuildFilters();
+  applyFilters();
+}
+
 
   // ======================
   // BXH huy chương: athletes + teams
@@ -680,25 +716,59 @@ function normalizeStr(str) {
   function importRegistrationFormat(rows) {
     const $tb = $("#tblScores tbody");
 
-    // 1) Đọc dữ liệu hiện có để tránh trùng VĐV cá nhân
+    // =========================
+    // 1. Đọc dữ liệu hiện có để chống trùng
+    // =========================
     const existingSingles = new Set();
+    const existingTeams = new Set();
+
     $tb.find("tr").each(function () {
-      const d = getRowData($(this));
-      if ((d.type || "single") !== "single") return;
-      const key =
-        normalizeStr(d.age) +
-        "|" +
-        normalizeStr(d.event) +
-        "|" +
-        normalizeStr(d.name) +
-        "|" +
-        (d.yob || "") +
-        "|" +
-        normalizeStr(d.team);
-      existingSingles.add(key);
+      const $tr = $(this);
+      const d = getRowData($tr);
+      const type = $tr.data("type") || "single";
+
+      if (type === "single") {
+        const key =
+          "S|" +
+          normalizeStr(d.age) +
+          "|" +
+          normalizeStr(d.event) +
+          "|" +
+          normalizeStr(d.name) +
+          "|" +
+          (d.yob || "") +
+          "|" +
+          normalizeStr(d.team);
+        existingSingles.add(key);
+      } else if (type === "master") {
+        // Master row của team (Song luyện / đồng đội)
+        const masterId = $tr.data("id");
+        const members = [];
+        $tb.find(`tr[data-parent="${masterId}"]`).each(function () {
+          const dm = getRowData($(this));
+
+          // BỎ prefix "– " ở tên row con
+          const memberName = (dm.name || "").replace(/^–\s*/, "");
+
+          members.push(normalizeStr(memberName) + "#" + (dm.yob || ""));
+        });
+        members.sort();
+        const teamKey =
+          "T|" +
+          normalizeStr(d.age) +
+          "|" +
+          normalizeStr(d.event) +
+          "|" +
+          normalizeStr(d.team) +
+          "|" +
+          members.join("|");
+        existingTeams.add(teamKey);
+      }
     });
 
-    // 2) Parse file Excel thành list dòng đăng ký
+    // =========================
+    // 2. Parse file Excel 5 cột -> regRows
+    // =========================
     const regRows = [];
     let curAge = "";
     let curEvent = "";
@@ -720,7 +790,7 @@ function normalizeStr(str) {
       const colYob = row[3] || "";
       const colTeam = row[4] || "";
 
-      // Bỏ dòng header
+      // bỏ header
       if (
         idx === 0 &&
         /lứa tuổi/i.test(colAge || "") &&
@@ -728,7 +798,8 @@ function normalizeStr(str) {
       ) {
         return;
       }
-      // Bỏ dòng trống
+
+      // bỏ dòng rỗng
       if (!colAge && !colEvent && !colName && !colYob && !colTeam) return;
 
       if (colAge) curAge = colAge;
@@ -740,25 +811,33 @@ function normalizeStr(str) {
         event: curEvent,
         name: colName,
         yob: colYob,
-        rawTeam: colTeam, // team đúng như trong file (có thể trống)
+        rawTeam: colTeam, // Đơn vị đúng như trong file
       });
     });
 
-    // 3) Duyệt list và build bảng: singles + team (Song luyện / Đồng đội)
+    // =========================
+    // 3. Duyệt regRows -> thêm single / team
+    // =========================
     let addedSingles = 0;
     let skippedSingles = 0;
     let addedTeams = 0;
+    let skippedTeams = 0;
 
     let i = 0;
     while (i < regRows.length) {
       const r = regRows[i];
-      const normEvent = normalizeStr(r.event);
-      const isTeamEvent =
-        normEvent.includes("song luyen") || normEvent.includes("dong doi");
 
-      // ===== Nội dung CÁ NHÂN / hoặc không có team =====
+      const evLower = (r.event || "").toLowerCase();
+      const isTeamEvent =
+        evLower.includes("song luyện") ||
+        evLower.includes("song luyen") ||
+        evLower.includes("đồng đội") ||
+        evLower.includes("dong doi");
+
+      // -------- CÁ NHÂN / KHÔNG TEAM --------
       if (!isTeamEvent || !r.rawTeam) {
         const key =
+          "S|" +
           normalizeStr(r.age) +
           "|" +
           normalizeStr(r.event) +
@@ -787,9 +866,8 @@ function normalizeStr(str) {
         continue;
       }
 
-      // ===== Nội dung ĐỒNG ĐỘI / SONG LUYỆN =====
-      // r.rawTeam chắc chắn có giá trị -> bắt đầu 1 đội mới
-      const teamName = r.rawTeam;
+      // -------- TEAM: SONG LUYỆN / ĐỒNG ĐỘI --------
+      const teamName = r.rawTeam; // dòng đầu tiên luôn có Đơn vị
       const group = {
         age: r.age,
         event: r.event,
@@ -804,13 +882,18 @@ function normalizeStr(str) {
       };
       i++;
 
-      // Gom các thành viên tiếp theo cùng event, không có rawTeam (ô Đơn vị trống)
+      // Gom tiếp các dòng cùng event, không có rawTeam (ô Đơn vị trống)
       while (i < regRows.length) {
         const r2 = regRows[i];
-        const normEvent2 = normalizeStr(r2.event);
+        const evLower2 = (r2.event || "").toLowerCase();
 
-        // Khác nội dung hoặc xuất hiện rawTeam mới -> dừng block hiện tại
-        if (normEvent2 !== normEvent || r2.rawTeam) break;
+        // khác nội dung hoặc có rawTeam mới -> dừng block hiện tại
+        if (
+          evLower2 !== evLower ||
+          r2.rawTeam // dòng này sẽ là đội kế tiếp
+        ) {
+          break;
+        }
 
         group.members.push({
           name: r2.name,
@@ -820,26 +903,50 @@ function normalizeStr(str) {
         i++;
       }
 
-      appendTeamGroup(group);
-      addedTeams++;
+      // Tạo key đội để chống trùng
+      const membersKey = group.members
+        .map((m) => normalizeStr(m.name) + "#" + (m.yob || ""))
+        .sort()
+        .join("|");
+
+      const teamKey =
+        "T|" +
+        normalizeStr(group.age) +
+        "|" +
+        normalizeStr(group.event) +
+        "|" +
+        normalizeStr(group.team || "") +
+        "|" +
+        membersKey;
+
+      if (existingTeams.has(teamKey)) {
+        skippedTeams++;
+      } else {
+        existingTeams.add(teamKey);
+        appendTeamGroup(group); // MASTER + SUB-ROWS
+        addedTeams++;
+      }
     }
 
-    // 4) Hoàn tất
+    // =========================
+    // 4. Kết quả
+    // =========================
     if (addedSingles > 0 || addedTeams > 0) {
       recalcAllScores();
       const parts = [];
       if (addedSingles) parts.push(`${addedSingles} VĐV/cặp`);
       if (addedTeams) parts.push(`${addedTeams} đội`);
       let msg = "Đã thêm " + parts.join(" + ") + " từ file đăng ký.";
-      if (skippedSingles) msg += ` Bỏ qua ${skippedSingles} dòng cá nhân trùng.`;
+      if (skippedSingles || skippedTeams) {
+        msg += ` (Bỏ qua ${skippedSingles} dòng cá nhân + ${skippedTeams} đội trùng.)`;
+      }
       toast(msg);
-    } else if (skippedSingles > 0) {
-      toast("Tất cả các dòng cá nhân trong file đã có trong bảng.", true);
+    } else if (skippedSingles || skippedTeams) {
+      toast("Tất cả dữ liệu trong file đăng ký đã có trong bảng.", true);
     } else {
       toast("Không tìm thấy dòng hợp lệ trong file đăng ký.", true);
     }
   }
-
 
   function importScore14ColsFormat(rows) {
     const $tb = $("#tblScores tbody");
@@ -1070,6 +1177,45 @@ function normalizeStr(str) {
         g5: "",
       })
     );
+    recalcAllScores();
+  });
+  // Đặt huy chương bằng tay bằng cách double-click vào ô huy chương
+  $(document).on("dblclick", "#tblScores tbody .medal", function () {
+    const $td = $(this);
+    const $tr = $td.closest("tr");
+    const type = $tr.data("type") || "single";
+
+    // Không áp dụng cho dòng member của đội
+    if (type === "member") return;
+
+    const currentManual = $tr.attr("data-manual-medal") || "";
+    const currentDisplay = $td.text().trim();
+    const current = currentManual || currentDisplay;
+
+    const input = prompt(
+      "Nhập huy chương cho dòng này (Vàng/Bạc/Đồng) hoặc để trống để bỏ đặt tay:",
+      current
+    );
+
+    if (input === null) return; // bấm Cancel
+
+    let val = input.trim().toLowerCase();
+
+    if (!val) {
+      // Xoá override -> quay về auto
+      $tr.removeAttr("data-manual-medal");
+    } else {
+      if (val === "vang" || val === "vàng" || val === "v") val = "Vàng";
+      else if (val === "bac" || val === "bạc" || val === "b") val = "Bạc";
+      else if (val === "dong" || val === "đồng" || val === "d") val = "Đồng";
+      else {
+        alert("Giá trị không hợp lệ. Vui lòng nhập Vàng, Bạc hoặc Đồng (hoặc để trống).");
+        return;
+      }
+      $tr.attr("data-manual-medal", val);
+    }
+
+    // Tính lại để đảm bảo bảng, thống kê, medal table… sync với huy chương tay
     recalcAllScores();
   });
 

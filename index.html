@@ -53,8 +53,71 @@
             Nếu có ít hơn 3 điểm thì lấy tổng đơn giản.
           </div>
         </div>
+        <!-- BXH Huy chương -->
+        <div class="card">
+          <h2>BXH huy chương</h2>
+          <div class="small muted mt8">
+            Bảng này tổng hợp Huy chương từ cột <b>"Thành tích"</b> của Bảng
+            chấm điểm. VĐV / Đoàn nào có "Vàng / Bạc / Đồng" sẽ được cộng vào
+            đây.
+          </div>
 
-        <!-- Bảng chấm điểm -->
+          <div class="mt16 small muted">BXH theo VĐV</div>
+          <div
+            style="
+              overflow: auto;
+              max-height: 24vh;
+              border: 1px solid #1f2937;
+              border-radius: 12px;
+              margin-top: 4px;
+            "
+          >
+            <table id="tblMedalAthletes" class="sticky-head">
+              <thead>
+                <tr>
+                  <th class="rank">#</th>
+                  <th>VĐV</th>
+                  <th>Đơn vị</th>
+                  <th class="gold">Vàng</th>
+                  <th class="silver">Bạc</th>
+                  <th class="bronze">Đồng</th>
+                  <th>Tổng</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="mt16 small muted">BXH theo Đoàn</div>
+          <div
+            style="
+              overflow: auto;
+              max-height: 24vh;
+              border: 1px solid #1f2937;
+              border-radius: 12px;
+              margin-top: 4px;
+            "
+          >
+            <table id="tblMedalTeams" class="sticky-head">
+              <thead>
+                <tr>
+                  <th class="rank">#</th>
+                  <th>Đơn vị</th>
+                  <th class="gold">Vàng</th>
+                  <th class="silver">Bạc</th>
+                  <th class="bronze">Đồng</th>
+                  <th>Tổng</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div class="mt8 small muted">
+            Tiêu chí xếp hạng: Vàng ↓ • Bạc ↓ • Đồng ↓ • Tên ↑
+          </div>
+        </div>
+                <!-- Bảng chấm điểm -->
         <div class="card">
           <h2>Bảng chấm điểm</h2>
 
@@ -122,71 +185,6 @@
             Xếp hạng & huy chương được tính riêng cho từng nhóm
             <b>Lứa tuổi + Nội dung</b>. Chỉ cần nhập điểm GĐ1–GĐ5, mọi thứ còn
             lại hệ thống sẽ tự xử lý.
-          </div>
-        </div>
-
-        <!-- BXH Huy chương -->
-        <div class="card">
-          <h2>BXH huy chương</h2>
-          <div class="small muted mt8">
-            Bảng này tổng hợp Huy chương từ cột <b>"Thành tích"</b> của Bảng
-            chấm điểm. VĐV / Đoàn nào có "Vàng / Bạc / Đồng" sẽ được cộng vào
-            đây.
-          </div>
-
-          <div class="mt16 small muted">BXH theo VĐV</div>
-          <div
-            style="
-              overflow: auto;
-              max-height: 24vh;
-              border: 1px solid #1f2937;
-              border-radius: 12px;
-              margin-top: 4px;
-            "
-          >
-            <table id="tblMedalAthletes" class="sticky-head">
-              <thead>
-                <tr>
-                  <th class="rank">#</th>
-                  <th>VĐV</th>
-                  <th>Đơn vị</th>
-                  <th class="gold">Vàng</th>
-                  <th class="silver">Bạc</th>
-                  <th class="bronze">Đồng</th>
-                  <th>Tổng</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
-          <div class="mt16 small muted">BXH theo Đoàn</div>
-          <div
-            style="
-              overflow: auto;
-              max-height: 24vh;
-              border: 1px solid #1f2937;
-              border-radius: 12px;
-              margin-top: 4px;
-            "
-          >
-            <table id="tblMedalTeams" class="sticky-head">
-              <thead>
-                <tr>
-                  <th class="rank">#</th>
-                  <th>Đơn vị</th>
-                  <th class="gold">Vàng</th>
-                  <th class="silver">Bạc</th>
-                  <th class="bronze">Đồng</th>
-                  <th>Tổng</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
-          <div class="mt8 small muted">
-            Tiêu chí xếp hạng: Vàng ↓ • Bạc ↓ • Đồng ↓ • Tên ↑
           </div>
         </div>
       </div>
