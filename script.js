@@ -1,7 +1,40 @@
+/** @format */
+
 (function ($) {
   "use strict";
 
   const LS_KEY = "vovinam.scores.v2";
+  const DEFAULT_MEDAL_WEIGHTS = {
+    gold: 10,
+    silver: 6,
+    bronze: 3,
+  };
+
+  function getMedalWeights() {
+    const read = (selector, fallback) => {
+      const $el = $(selector);
+      if ($el.length === 0) return fallback;
+      const raw = $el.val();
+      if (raw === undefined || raw === null || raw === "") return fallback;
+      const num = parseFloat(raw.toString().replace(",", "."));
+      return isNaN(num) || num <= 0 ? fallback : num;
+    };
+
+    return {
+      gold: read("#coefGold", DEFAULT_MEDAL_WEIGHTS.gold),
+      silver: read("#coefSilver", DEFAULT_MEDAL_WEIGHTS.silver),
+      bronze: read("#coefBronze", DEFAULT_MEDAL_WEIGHTS.bronze),
+    };
+  }
+
+  function setMedalWeightInputs(weights) {
+    const w = weights || DEFAULT_MEDAL_WEIGHTS;
+    if ($("#coefGold").length) {
+      $("#coefGold").val(w.gold);
+      $("#coefSilver").val(w.silver);
+      $("#coefBronze").val(w.bronze);
+    }
+  }
 
   // ======================
   // Utils
@@ -123,7 +156,7 @@
       `
       : `
         <td><input class="inp-g g1" type="number" step="0.1" value="${g1}" /></td>
-        <td><input class="inp-g g2" type="number" step="0.1" value "${g2}" /></td>
+        <td><input class="inp-g g2" type="number" step="0.1" value="${g2}" /></td>
         <td><input class="inp-g g3" type="number" step="0.1" value="${g3}" /></td>
         <td><input class="inp-g g4" type="number" step="0.1" value="${g4}" /></td>
         <td><input class="inp-g g5" type="number" step="0.1" value="${g5}" /></td>
@@ -287,112 +320,113 @@
   // ======================
   // Recalc: total + ranking + medal
   // ======================
-function recalcAllScores() {
-  const $allRows = $("#tblScores tbody tr");
+  function recalcAllScores() {
+    const $allRows = $("#tblScores tbody tr");
 
-  if ($allRows.length === 0) {
-    $("#tblMedalAthletes tbody").empty();
-    $("#tblMedalTeams tbody").empty();
-    rebuildFilters();
-    return;
-  }
+    if ($allRows.length === 0) {
+      $("#tblMedalAthletes tbody").empty();
+      $("#tblMedalTeams tbody").empty();
+      rebuildFilters();
 
-  const allowDoubleBronze = $("#chkDoubleBronze").is(":checked");
+      return;
+    }
 
-  // Xóa highlight tie cũ (nếu bạn đã dùng score-tie)
-  $allRows.removeClass("score-tie");
+    const allowDoubleBronze = $("#chkDoubleBronze").is(":checked");
 
-  // Chỉ xếp hạng cho single + master
-  const $rows = $allRows.filter(function () {
-    const type = $(this).data("type") || "single";
-    return type !== "member";
-  });
+    // Xóa highlight tie cũ (nếu bạn đã dùng score-tie)
+    $allRows.removeClass("score-tie");
 
-  const groups = {};
-
-  // Gom nhóm theo Lứa tuổi + Nội dung
-  $rows.each(function () {
-    const $tr = $(this);
-    const d = getRowData($tr);
-    const key = (d.age || "") + "||" + (d.event || "");
-    if (!groups[key]) groups[key] = [];
-    groups[key].push({ $tr, data: d });
-  });
-
-  Object.values(groups).forEach((list) => {
-    // Tính tổng điểm cho từng dòng
-    list.forEach((item) => {
-      item.data.total = computeTotalFromRow(item.$tr);
+    // Chỉ xếp hạng cho single + master
+    const $rows = $allRows.filter(function () {
+      const type = $(this).data("type") || "single";
+      return type !== "member";
     });
 
-    // Map tổng điểm -> các dòng cùng tổng (để highlight tie)
-    const tieMap = new Map();
-    list.forEach((item) => {
-      const t = item.data.total;
-      if (!t || t <= 0) return;
-      const k = t.toFixed(2);
-      if (!tieMap.has(k)) tieMap.set(k, []);
-      tieMap.get(k).push(item);
+    const groups = {};
+
+    // Gom nhóm theo Lứa tuổi + Nội dung
+    $rows.each(function () {
+      const $tr = $(this);
+      const d = getRowData($tr);
+      const key = (d.age || "") + "||" + (d.event || "");
+      if (!groups[key]) groups[key] = [];
+      groups[key].push({ $tr, data: d });
     });
 
-    // Sắp xếp để xếp hạng (từ cao xuống)
-    list.sort((a, b) => b.data.total - a.data.total);
+    Object.values(groups).forEach((list) => {
+      // Tính tổng điểm cho từng dòng
+      list.forEach((item) => {
+        item.data.total = computeTotalFromRow(item.$tr);
+      });
 
-    // Gán rank + medal (tự động) rồi áp dụng override nếu có
-    list.forEach((item, idx) => {
-      const d = item.data;
-      const $tr = item.$tr;
+      // Map tổng điểm -> các dòng cùng tổng (để highlight tie)
+      const tieMap = new Map();
+      list.forEach((item) => {
+        const t = item.data.total;
+        if (!t || t <= 0) return;
+        const k = t.toFixed(2);
+        if (!tieMap.has(k)) tieMap.set(k, []);
+        tieMap.get(k).push(item);
+      });
 
-      const rank = d.total > 0 ? idx + 1 : "";
-      let medal = "";
+      // Sắp xếp để xếp hạng (từ cao xuống)
+      list.sort((a, b) => b.data.total - a.data.total);
 
-      if (d.total > 0) {
-        if (rank === 1) medal = "Vàng";
-        else if (rank === 2) medal = "Bạc";
-        else if (rank === 3) medal = "Đồng";
-      }
+      // Gán rank + medal (tự động) rồi áp dụng override nếu có
+      list.forEach((item, idx) => {
+        const d = item.data;
+        const $tr = item.$tr;
 
-      // Đồng huy chương Đồng (nếu bật checkbox)
-      if (allowDoubleBronze && rank > 3 && d.total > 0) {
-        const prev = list[idx - 1];
-        if (prev && prev.data.total === d.total && rank <= 4) {
-          medal = "Đồng";
+        const rank = d.total > 0 ? idx + 1 : "";
+        let medal = "";
+
+        if (d.total > 0) {
+          if (rank === 1) medal = "Vàng";
+          else if (rank === 2) medal = "Bạc";
+          else if (rank === 3) medal = "Đồng";
         }
-      }
 
-      // Set rank
-      $tr.find(".rank-num").text(rank);
+        // Đồng huy chương Đồng (nếu bật checkbox)
+        if (allowDoubleBronze && rank > 3 && d.total > 0) {
+          const prev = list[idx - 1];
+          if (prev && prev.data.total === d.total && rank <= 4) {
+            medal = "Đồng";
+          }
+        }
 
-      // Nếu dòng này có đặt huy chương tay -> dùng huy chương tay
-      const manual = $tr.attr("data-manual-medal");
-      if (manual && manual.trim().length > 0) {
-        $tr.find(".medal").text(manual.trim());
-      } else {
-        $tr.find(".medal").text(medal);
-      }
+        // Set rank
+        $tr.find(".rank-num").text(rank);
+
+        // Nếu dòng này có đặt huy chương tay -> dùng huy chương tay
+        const manual = $tr.attr("data-manual-medal");
+        if (manual && manual.trim().length > 0) {
+          $tr.find(".medal").text(manual.trim());
+        } else {
+          $tr.find(".medal").text(medal);
+        }
+      });
+
+      // Highlight các dòng có cùng tổng điểm (nếu bạn muốn)
+      tieMap.forEach((itemsWithSameScore) => {
+        if (itemsWithSameScore.length >= 2) {
+          itemsWithSameScore.forEach((item) => {
+            item.$tr.addClass("score-tie");
+          });
+        }
+      });
     });
 
-    // Highlight các dòng có cùng tổng điểm (nếu bạn muốn)
-    tieMap.forEach((itemsWithSameScore) => {
-      if (itemsWithSameScore.length >= 2) {
-        itemsWithSameScore.forEach((item) => {
-          item.$tr.addClass("score-tie");
-        });
-      }
+    // STT cho tất cả (kể cả member)
+    let stt = 1;
+    $("#tblScores tbody tr:visible").each(function () {
+      $(this).find(".stt").text(stt++);
     });
-  });
 
-  // STT cho tất cả (kể cả member)
-  let stt = 1;
-  $("#tblScores tbody tr:visible").each(function () {
-    $(this).find(".stt").text(stt++);
-  });
-
-  rebuildMedalTables();
-  rebuildFilters();
-  applyFilters();
-}
-
+    rebuildMedalTables();
+    rebuildFilters();
+    applyFilters();
+    scheduleAutoSave();
+  }
 
   // ======================
   // BXH huy chương: athletes + teams
@@ -427,7 +461,9 @@ function recalcAllScores() {
         const id = $tr.data("id");
         $(`#tblScores tbody tr[data-parent="${id}"]`).each(function () {
           const $m = $(this);
-          const name = $m.find(".ath-name").text().replace(/^–\s*/, "").trim();
+          const rawName = $m.find(".ath-name").text();
+          const name = rawName.replace(/^[-–—\s]+/, "").trim();
+
           if (!name) return;
           const teamName = ($m.find(".inp-team").val() || team).trim();
 
@@ -470,16 +506,24 @@ function recalcAllScores() {
       }
     });
 
-    const athList = Array.from(mapAth.values()).map((a) => ({
-      ...a,
-      sum: a.g + a.s + a.b,
-    }));
-    const teamList = Array.from(mapTeam.values()).map((t) => ({
-      ...t,
-      sum: t.g + t.s + t.b,
-    }));
+    const weights = getMedalWeights();
+
+    const athList = Array.from(mapAth.values()).map((a) => {
+      const sum = a.g + a.s + a.b;
+      const points =
+        a.g * weights.gold + a.s * weights.silver + a.b * weights.bronze;
+      return { ...a, sum, points };
+    });
+
+    const teamList = Array.from(mapTeam.values()).map((t) => {
+      const sum = t.g + t.s + t.b;
+      const points =
+        t.g * weights.gold + t.s * weights.silver + t.b * weights.bronze;
+      return { ...t, sum, points };
+    });
 
     const sortAth = (a, b) => {
+      if (b.points !== a.points) return b.points - a.points; // ưu tiên điểm
       if (b.g !== a.g) return b.g - a.g;
       if (b.s !== a.s) return b.s - a.s;
       if (b.b !== a.b) return b.b - a.b;
@@ -488,6 +532,7 @@ function recalcAllScores() {
     athList.sort(sortAth);
 
     const sortTeam = (a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
       if (b.g !== a.g) return b.g - a.g;
       if (b.s !== a.s) return b.s - a.s;
       if (b.b !== a.b) return b.b - a.b;
@@ -502,10 +547,12 @@ function recalcAllScores() {
           <td class="rank">${idx + 1}</td>
           <td>${a.name}</td>
           <td>${a.team}</td>
-          <td>${a.g}</td>
-          <td>${a.s}</td>
-          <td>${a.b}</td>
-          <td>${a.sum}</td>
+          <td class="gold">${a.g}</td>
+          <td class="silver">${a.s}</td>
+          <td class="bronze">${a.b}</td>
+          <td class="sum">${a.sum}</td>
+          <td class="points">${a.points}</td>
+
         </tr>
       `);
     });
@@ -516,10 +563,11 @@ function recalcAllScores() {
         <tr>
           <td class="rank">${idx + 1}</td>
           <td>${t.team}</td>
-          <td>${t.g}</td>
-          <td>${t.s}</td>
-          <td>${t.b}</td>
-          <td>${t.sum}</td>
+          <td class="gold">${t.g}</td>
+          <td class="silver">${t.s}</td>
+          <td class="bronze">${t.b}</td>
+          <td class="sum">${t.sum}</td>
+          <td class="points">${t.points}</td>
         </tr>
       `);
     });
@@ -554,6 +602,7 @@ function recalcAllScores() {
       version: 2,
       rows,
       doubleBronze: $("#chkDoubleBronze").is(":checked"),
+      medalWeights: getMedalWeights(),
     };
   }
 
@@ -564,18 +613,38 @@ function recalcAllScores() {
       $tb.append(makeRowHtml(r));
     });
     $("#chkDoubleBronze").prop("checked", !!data.doubleBronze);
+
+    if (data.medalWeights) {
+      setMedalWeightInputs(data.medalWeights);
+    } else {
+      setMedalWeightInputs(DEFAULT_MEDAL_WEIGHTS);
+    }
+
     recalcAllScores();
   }
 
-  function saveToLocal() {
+  function saveToLocal(showToast = true) {
     try {
       const payload = collectState();
       localStorage.setItem(LS_KEY, JSON.stringify(payload));
-      toast("Đã lưu dữ liệu vào máy.");
+      if (showToast) {
+        toast("Đã lưu dữ liệu vào máy.");
+      }
     } catch (e) {
       console.error(e);
-      toast("Không lưu được vào máy (localStorage bị chặn hoặc đầy).", true);
+      if (showToast) {
+        toast("Không lưu được vào máy (localStorage bị chặn hoặc đầy).", true);
+      }
     }
+  }
+  let autoSaveTimer = null;
+
+  function scheduleAutoSave() {
+    // debounce: gõ xong 500ms mới lưu, tránh lưu liên tục
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      saveToLocal(false); // lưu không hiện toast
+    }, 500);
   }
 
   function loadFromLocal() {
@@ -633,15 +702,31 @@ function recalcAllScores() {
   function applyFilters() {
     const fAge = $("#filterAge").val() || "";
     const fEv = $("#filterEvent").val() || "";
+    const q = normalizeStr($("#txtSearch").val() || "");
 
     $("#tblScores tbody tr").each(function () {
-      const age = ($(this).find(".inp-age").val() || "").trim();
-      const ev = ($(this).find(".inp-event").val() || "").trim();
+      const $tr = $(this);
+
+      const age = ($tr.find(".inp-age").val() || "").trim();
+      const ev = ($tr.find(".inp-event").val() || "").trim();
+      const name = $tr.find(".ath-name").text().trim();
+      const yob = ($tr.find(".inp-yob").val() || "").trim();
+      const team = ($tr.find(".inp-team").val() || "").trim();
+
       const okAge = !fAge || age === fAge;
       const okEv = !fEv || ev === fEv;
-      $(this).toggle(okAge && okEv);
+
+      let okSearch = true;
+      if (q) {
+        const haystack = normalizeStr([name, yob, age, team].join(" "));
+        okSearch = haystack.includes(q);
+      }
+
+      const show = okAge && okEv && okSearch;
+      $tr.toggle(show);
     });
 
+    // Đánh lại STT cho các dòng đang hiển thị
     let idx = 1;
     $("#tblScores tbody tr:visible").each(function () {
       $(this).find(".stt").text(idx++);
@@ -1209,7 +1294,9 @@ function recalcAllScores() {
       else if (val === "bac" || val === "bạc" || val === "b") val = "Bạc";
       else if (val === "dong" || val === "đồng" || val === "d") val = "Đồng";
       else {
-        alert("Giá trị không hợp lệ. Vui lòng nhập Vàng, Bạc hoặc Đồng (hoặc để trống).");
+        alert(
+          "Giá trị không hợp lệ. Vui lòng nhập Vàng, Bạc hoặc Đồng (hoặc để trống)."
+        );
         return;
       }
       $tr.attr("data-manual-medal", val);
@@ -1222,13 +1309,20 @@ function recalcAllScores() {
   $("#chkDoubleBronze").on("change", function () {
     recalcAllScores();
   });
-
+  $("#coefGold, #coefSilver, #coefBronze").on("input change", function () {
+    rebuildMedalTables();
+    //  tự lưu luôn:
+    saveToLocal(false);
+  });
   $("#filterAge, #filterEvent").on("change", function () {
+    applyFilters();
+  });
+  $("#txtSearch").on("input", function () {
     applyFilters();
   });
 
   $("#btnSave").on("click", function () {
-    saveToLocal();
+    saveToLocal(true);
   });
 
   $("#btnReset").on("click", function () {
