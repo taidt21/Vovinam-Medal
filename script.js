@@ -4,6 +4,7 @@
   "use strict";
 
   const LS_KEY = "vovinam.scores.v2";
+
   const DEFAULT_MEDAL_WEIGHTS = {
     gold: 10,
     silver: 6,
@@ -738,18 +739,17 @@
   // ======================
   function exportScoresToExcel() {
     if (typeof XLSX === "undefined") {
-      toast("Không tìm thấy thư viện XLSX (excel.min.js).", true);
+      toast("Không tìm thấy thư viện XLSX để xuất Excel.", true);
       return;
     }
 
-    const wb = XLSX.utils.book_new();
-    const rows = [];
+    // Tính lại điểm, xếp hạng, huy chương cho chắc
+    recalcAllScores();
 
-    rows.push([
-      "STT",
+    const header = [
       "Lứa tuổi",
       "Nội dung",
-      "VĐV",
+      "Tên VĐV",
       "Năm sinh",
       "Đơn vị",
       "GĐ1",
@@ -757,42 +757,209 @@
       "GĐ3",
       "GĐ4",
       "GĐ5",
-      "Tổng điểm",
+      "Tổng",
       "Xếp hạng",
       "Thành tích",
-      "Loại dòng",
-    ]);
+    ];
 
-    $("#tblScores tbody tr").each(function (idx) {
+    const aoa = [header];
+    const merges = [];
+    let currentRow = 1; // 0 là header
+
+    // Regex nhận diện nội dung đồng đội / song luyện (nếu cần dùng sau này)
+    const isTeamEventRegex = /(đồng đội|dong doi|song luyện|song luyen)/i;
+
+    const $rows = $("#tblScores tbody tr");
+
+    $rows.each(function () {
       const $tr = $(this);
-      const d = getRowData($tr);
-      const rankText = $tr.find(".rank-num").text().trim();
-      const medal = $tr.find(".medal").text().trim();
       const type = $tr.data("type") || "single";
 
-      rows.push([
-        idx + 1,
-        d.age,
-        d.event,
-        d.name,
-        d.yob,
-        d.team,
-        d.g1,
-        d.g2,
-        d.g3,
-        d.g4,
-        d.g5,
-        d.total,
-        rankText,
-        medal,
-        type,
-      ]);
+      // Row member của đội sẽ xử lý khi gặp master, nên bỏ qua ở đây
+      if (type === "member") return;
+
+      const d = getRowData($tr);
+
+      // Dòng trống hoàn toàn thì bỏ qua
+      if (!d.age && !d.event && !d.name && !d.team) return;
+
+      if (type === "single") {
+        // ===== Dòng thi cá nhân / cặp: mỗi dòng 1 VĐV/cặp, không merge =====
+        aoa.push([
+          d.age,
+          d.event,
+          d.name,
+          d.yob,
+          d.team,
+          d.g1 || "",
+          d.g2 || "",
+          d.g3 || "",
+          d.g4 || "",
+          d.g5 || "",
+          d.total || "",
+          d.rank || "",
+          d.medal || "",
+        ]);
+        currentRow++;
+      } else if (type === "master") {
+        // ===== Dòng master của đội (đồng đội / song luyện) =====
+        const masterId = $tr.data("id");
+        const $members = $(`#tblScores tbody tr[data-parent="${masterId}"]`);
+        const members = [];
+
+        $members.each(function () {
+          const dm = getRowData($(this));
+          // hàng member chỉ cần tên + năm sinh
+          if (!dm.name) return;
+          members.push({
+            name: dm.name,
+            yob: dm.yob,
+          });
+        });
+
+        const isMergeGroup = members.length > 1;
+
+        // Nếu không có member (hoặc chỉ 1) thì xuất như 1 dòng bình thường
+        if (!isMergeGroup) {
+          aoa.push([
+            d.age,
+            d.event,
+            members[0]?.name || d.name, // ưu tiên tên VĐV nếu có
+            members[0]?.yob || d.yob,
+            d.team,
+            d.g1 || "",
+            d.g2 || "",
+            d.g3 || "",
+            d.g4 || "",
+            d.g5 || "",
+            d.total || "",
+            d.rank || "",
+            d.medal || "",
+          ]);
+          currentRow++;
+        } else {
+          // Có từ 2 VĐV trở lên -> xuất nhiều dòng + merge các cột chung
+          const startRow = currentRow;
+
+          members.forEach((m, idx) => {
+            if (idx === 0) {
+              // Dòng đầu của đội: ghi đủ thông tin + điểm
+              aoa.push([
+                d.age,
+                d.event,
+                m.name,
+                m.yob,
+                d.team,
+                d.g1 || "",
+                d.g2 || "",
+                d.g3 || "",
+                d.g4 || "",
+                d.g5 || "",
+                d.total || "",
+                d.rank || "",
+                d.medal || "",
+              ]);
+            } else {
+              // Các dòng sau: chỉ ghi tên + năm sinh, còn lại để trống và sẽ merge
+              aoa.push([
+                "", // Lứa tuổi (merge)
+                "", // Nội dung (merge)
+                m.name,
+                m.yob,
+                "", // Đơn vị (merge)
+                "", // GĐ1 (merge)
+                "", // GĐ2 (merge)
+                "", // GĐ3 (merge)
+                "", // GĐ4 (merge)
+                "", // GĐ5 (merge)
+                "", // Tổng (merge)
+                "", // Xếp hạng (merge)
+                "", // Thành tích (merge)
+              ]);
+            }
+            currentRow++;
+          });
+
+          const endRow = currentRow - 1;
+
+          // Merge dọc các cột chung:
+          // Lứa tuổi (0), Nội dung (1), Đơn vị (4),
+          // GĐ1..GĐ5 (5..9), Tổng (10), Xếp hạng (11), Thành tích (12)
+          const colsToMerge = [0, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+          colsToMerge.forEach((c) => {
+            merges.push({
+              s: { r: startRow, c },
+              e: { r: endRow, c },
+            });
+          });
+        }
+      }
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // ===== 3. Tạo sheet từ AOA =====
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+    // Merge
+    if (merges.length) {
+      ws["!merges"] = merges;
+    }
+
+    // Độ rộng cột
+    ws["!cols"] = [
+      { wch: 10 }, // Lứa tuổi
+      { wch: 26 }, // Nội dung
+      { wch: 22 }, // Tên VĐV
+      { wch: 10 }, // Năm sinh
+      { wch: 18 }, // Đơn vị
+      { wch: 6 },  // GĐ1
+      { wch: 6 },  // GĐ2
+      { wch: 6 },  // GĐ3
+      { wch: 6 },  // GĐ4
+      { wch: 6 },  // GĐ5
+      { wch: 8 },  // Tổng
+      { wch: 9 },  // Xếp hạng
+      { wch: 12 }, // Thành tích
+    ];
+
+    // AutoFilter
+    const lastRow = aoa.length - 1;
+    const lastCol = header.length - 1;
+    ws["!autofilter"] = {
+      ref: XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: lastRow, c: lastCol },
+      }),
+    };
+
+    // Freeze header
+    ws["!freeze"] = {
+      xSplit: 0,
+      ySplit: 1,
+      topLeftCell: "A2",
+      activePane: "bottomLeft",
+      state: "frozen",
+    };
+
+    // Style header: đậm + căn giữa (nếu bản XLSX bạn dùng hỗ trợ style)
+    const ref = ws["!ref"];
+    if (ref) {
+      const hdrRange = XLSX.utils.decode_range(ref);
+      for (let C = hdrRange.s.c; C <= hdrRange.e.c; ++C) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (!ws[addr]) continue;
+        ws[addr].s = {
+          font: { bold: true },
+          alignment: { horizontal: "center", vertical: "center" },
+        };
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Scores");
     XLSX.writeFile(wb, "vovinam_scores.xlsx");
   }
+
 
   // ======================
   // Import Excel dạng đăng ký 5 cột
