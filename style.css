@@ -377,10 +377,47 @@ td.gold, td.silver, td.bronze {
 .card-main-head {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
+
 .ath-name.is-member div::before {
   content: "– ";
 }
+
+/* Header có nút fullscreen */
+.header-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Panel dùng cho fullscreen */
+.table-panel {
+  position: relative;
+}
+
+/* Khi đang ở chế độ fullscreen, cho bảng chiếm tối đa không gian */
+.fullscreen-active {
+  max-height: 85vh !important;
+}
+
+.fullscreen-active .table-panel-child {
+  min-height: 85vh !important;
+
+}
+
+.fullscreen-active td {
+  font-size: 16px;
+}
+
+/* Nút fullscreen nhỏ gọn */
+.btn-fullscreen {
+  font-size: 11px;
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+
 /* =========================
    RESPONSIVE
    ========================= */

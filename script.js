@@ -123,7 +123,9 @@
       : `<td><input class="inp-event" type="text" value="${ev}" /></td>`;
 
     // Name cell
-    const nameCell =`<td contenteditable="true" class="ath-name ${isMember ? " is-member" : ""}">
+    const nameCell = `<td contenteditable="true" class="ath-name ${
+      isMember ? " is-member" : ""
+    }">
     <div>${name || ""}</div>
     </td>`;
 
@@ -912,13 +914,13 @@
       { wch: 22 }, // Tên VĐV
       { wch: 10 }, // Năm sinh
       { wch: 18 }, // Đơn vị
-      { wch: 6 },  // GĐ1
-      { wch: 6 },  // GĐ2
-      { wch: 6 },  // GĐ3
-      { wch: 6 },  // GĐ4
-      { wch: 6 },  // GĐ5
-      { wch: 8 },  // Tổng
-      { wch: 9 },  // Xếp hạng
+      { wch: 6 }, // GĐ1
+      { wch: 6 }, // GĐ2
+      { wch: 6 }, // GĐ3
+      { wch: 6 }, // GĐ4
+      { wch: 6 }, // GĐ5
+      { wch: 8 }, // Tổng
+      { wch: 9 }, // Xếp hạng
       { wch: 12 }, // Thành tích
     ];
 
@@ -960,7 +962,6 @@
     XLSX.writeFile(wb, "vovinam_scores.xlsx");
   }
 
-
   // ======================
   // Import Excel dạng đăng ký 5 cột
   // (Lứa tuổi, Nội dung, Tên VĐV, Năm sinh, Đơn vị)
@@ -1000,7 +1001,7 @@
           const dm = getRowData($(this));
 
           // tên row con
-          const memberName = dm.name
+          const memberName = dm.name;
 
           members.push(normalizeStr(memberName) + "#" + (dm.yob || ""));
         });
@@ -1523,6 +1524,44 @@
     const file = e.target.files[0];
     if (file) handleImportScoresFile(file);
     $(this).val("");
+  });
+  // ======================
+  // Fullscreen cho BXH VĐV & Đoàn
+  // ======================
+  function toggleFullscreenFor(targetSelector, btn) {
+    const el = document.querySelector(targetSelector);
+    if (!el) return;
+
+    if (!document.fullscreenElement) {
+      if (el.requestFullscreen) {
+        el.requestFullscreen();
+        el.classList.add("fullscreen-active");
+        btn.classList.add("is-fullscreen");
+        btn.textContent = "⤡ Thoát full màn";
+      }
+    } else {
+      document.exitFullscreen();
+    }
+  }
+  // Nút phóng to / thu nhỏ từng bảng
+  $(document).on("click", ".btn-fullscreen", function () {
+    const target = this.getAttribute("data-target");
+    if (!target) return;
+    toggleFullscreenFor(target, this);
+  });
+
+  // Khi thoát fullscreen bằng ESC hoặc nút trình duyệt
+  document.addEventListener("fullscreenchange", function () {
+    if (!document.fullscreenElement) {
+      // remove class trên panel
+      $(".table-panel.fullscreen-active").removeClass("fullscreen-active");
+      // reset nút
+      $(".btn-fullscreen.is-fullscreen")
+        .removeClass("is-fullscreen")
+        .each(function () {
+          this.textContent = "⤢ Toàn màn hình";
+        });
+    }
   });
 
   // ======================

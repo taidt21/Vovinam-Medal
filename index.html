@@ -87,7 +87,15 @@
             </label>
           </div>
 
-          <div class="mt16 small muted">BXH theo VĐV</div>
+          <div class="mt16 small muted header-inline">
+            <span>BXH theo VĐV</span>
+            <button
+              type="button"
+              class="ghost btn-fullscreen"
+              data-target="#panelMedalAthletes">
+              ⤢ Toàn màn hình
+            </button>
+          </div>
           <div
             style="
               overflow: auto;
@@ -95,7 +103,8 @@
               border: 1px solid #1f2937;
               border-radius: 12px;
               margin-top: 4px;
-            ">
+            "
+            id="panelMedalAthletes">
             <table id="tblMedalAthletes" class="sticky-head">
               <thead>
                 <tr>
@@ -113,8 +122,17 @@
             </table>
           </div>
 
-          <div class="mt16 small muted">BXH theo Đoàn</div>
+          <div class="mt16 small muted header-inline">
+            <span>BXH theo Đoàn</span>
+            <button
+              type="button"
+              class="ghost btn-fullscreen"
+              data-target="#panelMedalTeams">
+              ⤢ Toàn màn hình
+            </button>
+          </div>
           <div
+            id="panelMedalTeams"
             style="
               overflow: auto;
               max-height: 24vh;
@@ -143,10 +161,11 @@
           </div>
         </div>
         <!-- Bảng chấm điểm -->
-        <div class="card">
+        <div id="cardScore" class="card table-panel">
           <div class="card-main-head">
 
             <h2>Bảng chấm điểm</h2>
+
             <label class="chip">
               Lọc lứa tuổi:
               <select id="filterAge">
@@ -165,9 +184,17 @@
                 id="txtSearch"
                 placeholder="Tìm VĐV / Năm sinh / Lứa tuổi / Đơn vị..." />
             </div>
+            <!-- Nút phóng to card chấm điểm -->
+            <button
+              type="button"
+              class="ghost btn-fullscreen"
+              data-target="#cardScore">
+              ⤢ Toàn màn hình
+            </button>
+
           </div>
           <div
-            class="mt8"
+            class="mt8 table-panel-child"
             style="
               overflow: auto;
               max-height: 55vh;
