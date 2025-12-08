@@ -122,9 +122,9 @@
       : `<td><input class="inp-event" type="text" value="${ev}" /></td>`;
 
     // Name cell
-    const nameCell = isMember
-      ? `<td contenteditable="true" class="ath-name">– ${name || ""}</td>`
-      : `<td contenteditable="true" class="ath-name">${name || ""}</td>`;
+    const nameCell =`<td contenteditable="true" class="ath-name ${isMember ? " is-member" : ""}">
+    <div>${name || ""}</div>
+    </td>`;
 
     // YOB cell
     const yobCell = isMember
@@ -462,7 +462,7 @@
         $(`#tblScores tbody tr[data-parent="${id}"]`).each(function () {
           const $m = $(this);
           const rawName = $m.find(".ath-name").text();
-          const name = rawName.replace(/^[-–—\s]+/, "").trim();
+          const name = rawName.trim();
 
           if (!name) return;
           const teamName = ($m.find(".inp-team").val() || team).trim();
@@ -832,8 +832,8 @@
         $tb.find(`tr[data-parent="${masterId}"]`).each(function () {
           const dm = getRowData($(this));
 
-          // BỎ prefix "– " ở tên row con
-          const memberName = (dm.name || "").replace(/^–\s*/, "");
+          // tên row con
+          const memberName = dm.name
 
           members.push(normalizeStr(memberName) + "#" + (dm.yob || ""));
         });

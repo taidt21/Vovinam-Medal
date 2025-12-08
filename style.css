@@ -378,7 +378,9 @@ td.gold, td.silver, td.bronze {
   display: flex;
   gap: 1rem;
 }
-
+.ath-name.is-member div::before {
+  content: "– ";
+}
 /* =========================
    RESPONSIVE
    ========================= */
