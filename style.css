@@ -298,11 +298,33 @@ th.medal {
   font-weight: bold;
 }
 
+/* tương thích class mới trong JS */
+.team-master-row {
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: bold;
+}
+
 .member-row {
   background: rgba(255, 255, 255, 0.04);
 }
 
+/* tương thích class mới trong JS */
+.team-member-row {
+  background: rgba(255, 255, 255, 0.04);
+}
+
 .member-row td {
+  opacity: 0.85;
+  padding-left: 18px;
+}
+
+.team-member-row td {
+  opacity: 0.85;
+  padding-left: 18px;
+}
+
+/* tương thích class mới trong JS */
+.team-member-row td {
   opacity: 0.85;
   padding-left: 18px;
 }

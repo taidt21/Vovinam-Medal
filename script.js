@@ -54,6 +54,47 @@
       .replace(/đ/g, "d"); // chuyển đ -> d để bắt được "dong doi"
   }
 
+  // ======================
+  // Nội dung "đối kháng": khoá ô điểm, chỉ cho nhập huy chương
+  // ======================
+  function isSparringEvent(eventText) {
+    const n = normalizeStr(eventText);
+    // chấp nhận nhiều kiểu nhập: "đối kháng", "doi khang", "doikhang"
+    return (
+      n.includes("doi khang") ||
+      n.includes("doikhang") ||
+      n.includes("sparring")
+    );
+  }
+
+  function isSparringRow($tr) {
+    const ev = ($tr.find(".inp-event").val() || "").toString();
+    return isSparringEvent(ev);
+  }
+
+  function syncSparringLockForRow($tr) {
+    const type = $tr.data("type") || "single";
+    if (type === "member") return;
+
+    const sparring = isSparringRow($tr);
+    $tr.toggleClass("is-sparring", sparring);
+
+    const $scoreInputs = $tr.find(".inp-g");
+    if (sparring) {
+      $scoreInputs.prop("disabled", true).attr("tabindex", "-1");
+      $tr.find(".total").text("");
+      $tr.find(".rank-num").text("");
+    } else {
+      $scoreInputs.prop("disabled", false).removeAttr("tabindex");
+    }
+  }
+
+  function applySparringLocks() {
+    $("#tblScores tbody tr").each(function () {
+      syncSparringLockForRow($(this));
+    });
+  }
+
   function toast(msg, isErr) {
     const el = $("<div/>")
       .text(msg)
@@ -98,6 +139,8 @@
     const total = row.total ?? "";
     const rank = row.rank ?? "";
     const medal = row.medal || "";
+
+    const isSparring = isSparringEvent(ev);
 
     const rowClass =
       type === "master"
@@ -158,11 +201,21 @@
         <td class="medal"></td>
       `
       : `
-        <td><input class="inp-g g1" type="number" step="0.1" value="${g1}" /></td>
-        <td><input class="inp-g g2" type="number" step="0.1" value="${g2}" /></td>
-        <td><input class="inp-g g3" type="number" step="0.1" value="${g3}" /></td>
-        <td><input class="inp-g g4" type="number" step="0.1" value="${g4}" /></td>
-        <td><input class="inp-g g5" type="number" step="0.1" value="${g5}" /></td>
+        <td><input class="inp-g g1" type="number" step="0.1" value="${g1}" ${
+          isSparring ? 'disabled tabindex="-1"' : ""
+        } /></td>
+        <td><input class="inp-g g2" type="number" step="0.1" value="${g2}" ${
+          isSparring ? 'disabled tabindex="-1"' : ""
+        } /></td>
+        <td><input class="inp-g g3" type="number" step="0.1" value="${g3}" ${
+          isSparring ? 'disabled tabindex="-1"' : ""
+        } /></td>
+        <td><input class="inp-g g4" type="number" step="0.1" value="${g4}" ${
+          isSparring ? 'disabled tabindex="-1"' : ""
+        } /></td>
+        <td><input class="inp-g g5" type="number" step="0.1" value="${g5}" ${
+          isSparring ? 'disabled tabindex="-1"' : ""
+        } /></td>
         <td class="total">${total}</td>
         <td class="rank-num">${rank}</td>
         <td class="medal">${medal}</td>
@@ -171,7 +224,9 @@
     return `
       <tr data-id="${id}" data-type="${type}" ${
       parentId ? `data-parent="${parentId}"` : ""
-    } class="${rowClass}">
+    } ${
+      row.manualMedal ? `data-manual-medal="${row.manualMedal}"` : ""
+    } class="${rowClass} ${isSparring && !isMember ? "is-sparring" : ""}">
         <td class="rank stt">-</td>
         ${ageCell}
         ${eventCell}
@@ -190,6 +245,12 @@
   function computeTotalFromRow($tr) {
     const type = $tr.data("type") || "single";
     if (type === "member") {
+      $tr.find(".total").text("");
+      return 0;
+    }
+
+    // Đối kháng: không tính tổng điểm (vì không cho nhập điểm)
+    if (isSparringRow($tr)) {
       $tr.find(".total").text("");
       return 0;
     }
@@ -336,6 +397,9 @@
 
     const allowDoubleBronze = $("#chkDoubleBronze").is(":checked");
 
+    // Luôn đồng bộ trạng thái khoá/ mở khoá điểm theo nội dung "đối kháng"
+    applySparringLocks();
+
     // Xóa highlight tie cũ (nếu bạn đã dùng score-tie)
     $allRows.removeClass("score-tie");
 
@@ -357,14 +421,18 @@
     });
 
     Object.values(groups).forEach((list) => {
-      // Tính tổng điểm cho từng dòng
-      list.forEach((item) => {
+      // Tách nhóm: đối kháng (không xếp hạng theo điểm) vs chấm điểm
+      const sparringList = list.filter((x) => isSparringRow(x.$tr));
+      const scoringList = list.filter((x) => !isSparringRow(x.$tr));
+
+      // Tính tổng điểm cho các dòng chấm điểm
+      scoringList.forEach((item) => {
         item.data.total = computeTotalFromRow(item.$tr);
       });
 
       // Map tổng điểm -> các dòng cùng tổng (để highlight tie)
       const tieMap = new Map();
-      list.forEach((item) => {
+      scoringList.forEach((item) => {
         const t = item.data.total;
         if (!t || t <= 0) return;
         const k = t.toFixed(2);
@@ -373,10 +441,10 @@
       });
 
       // Sắp xếp để xếp hạng (từ cao xuống)
-      list.sort((a, b) => b.data.total - a.data.total);
+      scoringList.sort((a, b) => b.data.total - a.data.total);
 
       // Gán rank + medal (tự động) rồi áp dụng override nếu có
-      list.forEach((item, idx) => {
+      scoringList.forEach((item, idx) => {
         const d = item.data;
         const $tr = item.$tr;
 
@@ -391,7 +459,7 @@
 
         // Đồng huy chương Đồng (nếu bật checkbox)
         if (allowDoubleBronze && rank > 3 && d.total > 0) {
-          const prev = list[idx - 1];
+          const prev = scoringList[idx - 1];
           if (prev && prev.data.total === d.total && rank <= 4) {
             medal = "Đồng";
           }
@@ -406,6 +474,24 @@
           $tr.find(".medal").text(manual.trim());
         } else {
           $tr.find(".medal").text(medal);
+        }
+      });
+
+      // Đối kháng: không tự tính rank/medal theo điểm. Chỉ dùng huy chương nhập tay.
+      sparringList.forEach((item) => {
+        const $tr = item.$tr;
+        $tr.find(".total").text("");
+        $tr.find(".rank-num").text("");
+
+        const manual = $tr.attr("data-manual-medal");
+        if (manual && manual.trim().length > 0) {
+          $tr.find(".medal").text(manual.trim());
+        } else {
+          // nếu đang có chữ Vàng/Bạc/Đồng (nhập từ import) thì giữ, còn lại để trống
+          const cur = $tr.find(".medal").text().trim();
+          if (!["Vàng", "Bạc", "Đồng"].includes(cur)) {
+            $tr.find(".medal").text("");
+          }
         }
       });
 
@@ -583,6 +669,9 @@
     const rows = $("#tblScores tbody tr")
       .map(function () {
         const d = getRowData($(this));
+        const manualMedal = ($(this).attr("data-manual-medal") || "")
+          .toString()
+          .trim();
         return {
           id: d.id,
           type: d.type,
@@ -597,6 +686,7 @@
           g3: d.g3,
           g4: d.g4,
           g5: d.g5,
+          manualMedal,
         };
       })
       .get();
@@ -1391,6 +1481,120 @@
   // ======================
   // Events
   // ======================
+
+  // ======================
+  // Fast data entry: spreadsheet-like navigation for score inputs
+  // - Enter: move right (Shift+Enter: move left)
+  // - Arrow keys: move between score cells (instead of changing number)
+  // - Skip hidden rows (filters/search)
+  // - Skip team member rows (no score inputs)
+  // ======================
+
+  const SCORE_COLS = ["g1", "g2", "g3", "g4", "g5"];
+
+  function getVisibleScoreRows() {
+    return $("#tblScores tbody tr:visible").filter(function () {
+      const t = $(this).data("type") || "single";
+      if (t === "member") return false;
+      // Đối kháng: khoá điểm nên không cho tham gia điều hướng nhập điểm
+      if (isSparringRow($(this))) return false;
+      return true;
+    });
+  }
+
+  function focusAndSelect($el) {
+    if (!$el || !$el.length) return;
+    $el.trigger("focus");
+    try {
+      const el = $el.get(0);
+      if (el && typeof el.select === "function") el.select();
+    } catch (_) {}
+  }
+
+  function getScoreColIndex($inp) {
+    for (let i = 0; i < SCORE_COLS.length; i++) {
+      if ($inp.hasClass(SCORE_COLS[i])) return i;
+    }
+    return -1;
+  }
+
+  function moveScoreFocus($fromInput, dir) {
+    const $tr = $fromInput.closest("tr");
+    const colIdx = getScoreColIndex($fromInput);
+    if (colIdx < 0) return;
+
+    const $rows = getVisibleScoreRows();
+    const rowIdx = $rows.index($tr);
+    if (rowIdx < 0) return;
+
+    let targetRowIdx = rowIdx;
+    let targetColIdx = colIdx;
+
+    if (dir === "right") {
+      targetColIdx = colIdx + 1;
+      if (targetColIdx >= SCORE_COLS.length) {
+        targetColIdx = 0;
+        targetRowIdx = rowIdx + 1;
+      }
+    } else if (dir === "left") {
+      targetColIdx = colIdx - 1;
+      if (targetColIdx < 0) {
+        targetColIdx = SCORE_COLS.length - 1;
+        targetRowIdx = rowIdx - 1;
+      }
+    } else if (dir === "down") {
+      targetRowIdx = rowIdx + 1;
+    } else if (dir === "up") {
+      targetRowIdx = rowIdx - 1;
+    }
+
+    const $targetRow = $rows.eq(targetRowIdx);
+    if (!$targetRow.length) return;
+
+    const cls =
+      SCORE_COLS[Math.max(0, Math.min(SCORE_COLS.length - 1, targetColIdx))];
+    const $target = $targetRow.find(`.inp-g.${cls}`);
+    if ($target.length) {
+      focusAndSelect($target);
+    } else {
+      // fallback: first score input in that row
+      focusAndSelect($targetRow.find(".inp-g").first());
+    }
+  }
+
+  // Arrow keys on <input type="number"> normally change value.
+  // Here we convert arrow keys into navigation for faster data entry.
+  $(document).on("keydown", "#tblScores tbody .inp-g", function (e) {
+    const key = e.key;
+
+    if (key === "Enter") {
+      e.preventDefault();
+      moveScoreFocus($(this), e.shiftKey ? "left" : "right");
+      return;
+    }
+
+    if (key === "ArrowRight") {
+      e.preventDefault();
+      moveScoreFocus($(this), "right");
+      return;
+    }
+    if (key === "ArrowLeft") {
+      e.preventDefault();
+      moveScoreFocus($(this), "left");
+      return;
+    }
+    if (key === "ArrowDown") {
+      e.preventDefault();
+      moveScoreFocus($(this), "down");
+      return;
+    }
+    if (key === "ArrowUp") {
+      e.preventDefault();
+      moveScoreFocus($(this), "up");
+      return;
+    }
+  });
+
   $(document).on(
     "input change",
     ".inp-age, .inp-event, .inp-yob, .inp-team, .inp-g",
