@@ -58,10 +58,14 @@ h1 {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-areas: "a b"
-    "c c";
+  grid-template-columns: repeat(1, 1fr);
+  /* grid-template-areas: "a b"
+    "c c"; */
   gap: 16px;
+}
+.card-row-bxh{
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
 }
 
 .card {
@@ -71,7 +75,7 @@ h1 {
   padding: 14px 14px 10px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
 }
-
+/* 
 .card:nth-child(2) {
   grid-area: b;
 }
@@ -82,8 +86,12 @@ h1 {
 
 .card:nth-child(3) {
   grid-area: c;
+} */
+.header-actions{
+  margin-right: 50px;
+  display: flex;
+  gap: 10px;
 }
-
 .card h2 {
   margin: 0 0 8px;
   font-size: 18px;
@@ -351,7 +359,7 @@ td.gold, td.silver, td.bronze {
 }
 
 .toolbar-search input {
-  padding: 4px 8px;
+  padding: 10px 12px;
   outline: none;
   border-radius: 6px;
   width: 100%;

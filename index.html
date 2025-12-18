@@ -7,7 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
-      rel="stylesheet" />
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -19,50 +20,6 @@
       </p>
 
       <div class="grid">
-        <!-- Thiết lập & tuỳ chọn -->
-        <div class="card">
-          <h2>Thiết lập & tuỳ chọn</h2>
-          <div class="kpi">
-            <label class="chip small">
-              <input type="checkbox" id="chkDoubleBronze" />
-              Có đồng huy chương Đồng (đến hạng 4)
-            </label>
-          </div>
-          <div class="toolbar">
-            <button id="btnAddRow" class="ghost">+ Thêm VĐV</button>
-            <button id="btnImportScores" class="ghost">📥 Nhập Excel</button>
-            <button id="btnExportScores" class="ghost">
-              ⬇️ Xuất Excel bảng điểm
-            </button>
-            <button id="btnSave" class="primary">💾 Lưu vào máy (local)</button>
-            <button id="btnReset" class="ghost danger">🧹 Xoá dữ liệu</button>
-            <!-- Input file ẩn để nhập Excel -->
-            <input
-              type="file"
-              id="fileImportScores"
-              accept=".xlsx,.xls,.csv"
-              style="display: none" />
-
-            <div class="small muted mt8">
-              File Excel để nhập nên theo thứ tự cột:
-              <br />
-              <b>STT, Lứa tuổi, Nội dung, VĐV, Năm sinh, Đơn vị, GĐ1, GĐ2, GĐ3,
-                GĐ4, GĐ5, Tổng, Xếp hạng, Thành tích</b>. 3 cột cuối có thể để
-              trống, hệ thống sẽ tự tính lại.
-            </div>
-          </div>
-
-          <div class="mt8 small muted">
-            Cột <b>"Lứa tuổi"</b> và <b>"Nội dung"</b> dùng để chia nhóm xếp
-            hạng. Ví dụ: "Lứa tuổi 1 + Tứ trụ quyền" là 1 nhóm, "Lứa tuổi 2 + Tứ
-            trụ quyền" là nhóm khác.
-          </div>
-          <div class="mt8 small muted">
-            GĐ1–GĐ5 là điểm của 5 giám định. <b>Tổng điểm</b> được tính theo
-            công thức: <b>tổng 5 điểm − (điểm cao nhất + điểm thấp nhất)</b>.
-            Nếu có ít hơn 3 điểm thì lấy tổng đơn giản.
-          </div>
-        </div>
         <!-- BXH Huy chương -->
         <div class="card">
           <h2>BXH huy chương</h2>
@@ -86,96 +43,125 @@
               <input type="number" id="coefBronze" step="1" value="3" />
             </label>
           </div>
-
-          <div class="mt16 small muted header-inline">
-            <span>BXH theo VĐV</span>
-            <div class="header-actions">
-              <button type="button" class="ghost" id="btnExportMedalAthletes">
-                ⬇️ Xuất Excel VĐV
-              </button>
-              <button
-                type="button"
-                class="ghost btn-fullscreen"
-                data-target="#panelMedalAthletes">
-                ⤢ Toàn màn hình
-              </button>
+          <div class="card-row-bxh">
+            <div class="vdv">
+              <div class="mt16 small muted header-inline">
+                <span>BXH theo VĐV</span>
+                <div class="header-actions">
+                  <button
+                    type="button"
+                    class="ghost"
+                    id="btnExportMedalAthletes"
+                  >
+                    ⬇️ Xuất Excel VĐV
+                  </button>
+                  <button
+                    type="button"
+                    class="ghost btn-fullscreen"
+                    data-target="#panelMedalAthletes"
+                  >
+                    ⤢ Toàn màn hình
+                  </button>
+                </div>
+              </div>
+              <div
+                style="
+                  overflow: auto;
+                  max-height: 24vh;
+                  border: 1px solid #1f2937;
+                  border-radius: 12px;
+                  margin-top: 4px;
+                "
+                id="panelMedalAthletes"
+              >
+                <table id="tblMedalAthletes" class="sticky-head">
+                  <thead>
+                    <tr>
+                      <th class="rank">#</th>
+                      <th>VĐV</th>
+                      <th>Đơn vị</th>
+                      <th class="gold">Vàng</th>
+                      <th class="silver">Bạc</th>
+                      <th class="bronze">Đồng</th>
+                      <th>Tổng</th>
+                      <th>Điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="doan">
+              <div class="mt16 small muted header-inline">
+                <span>BXH theo Đoàn</span>
+                <div class="header-actions">
+                  <button type="button" class="ghost" id="btnExportMedalTeams">
+                    ⬇️ Xuất Excel Đoàn
+                  </button>
+                  <button
+                    type="button"
+                    class="ghost btn-fullscreen"
+                    data-target="#panelMedalTeams"
+                  >
+                    ⤢ Toàn màn hình
+                  </button>
+                </div>
+              </div>
+              <div
+                id="panelMedalTeams"
+                style="
+                  overflow: auto;
+                  max-height: 24vh;
+                  border: 1px solid #1f2937;
+                  border-radius: 12px;
+                  margin-top: 4px;
+                "
+              >
+                <table id="tblMedalTeams" class="sticky-head">
+                  <thead>
+                    <tr>
+                      <th class="rank">#</th>
+                      <th>Đơn vị</th>
+                      <th class="gold">Vàng</th>
+                      <th class="silver">Bạc</th>
+                      <th class="bronze">Đồng</th>
+                      <th class="sum">Tổng</th>
+                      <th class="points">Điểm</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
           </div>
-          <div
-            style="
-              overflow: auto;
-              max-height: 24vh;
-              border: 1px solid #1f2937;
-              border-radius: 12px;
-              margin-top: 4px;
-            "
-            id="panelMedalAthletes">
-            <table id="tblMedalAthletes" class="sticky-head">
-              <thead>
-                <tr>
-                  <th class="rank">#</th>
-                  <th>VĐV</th>
-                  <th>Đơn vị</th>
-                  <th class="gold">Vàng</th>
-                  <th class="silver">Bạc</th>
-                  <th class="bronze">Đồng</th>
-                  <th>Tổng</th>
-                  <th>Điểm</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
-          <div class="mt16 small muted header-inline">
-            <span>BXH theo Đoàn</span>
-            <div class="header-actions">
-              <button type="button" class="ghost" id="btnExportMedalTeams">
-                ⬇️ Xuất Excel Đoàn
-              </button>
-              <button
-                type="button"
-                class="ghost btn-fullscreen"
-                data-target="#panelMedalTeams">
-                ⤢ Toàn màn hình
-              </button>
-            </div>
-          </div>
-          <div
-            id="panelMedalTeams"
-            style="
-              overflow: auto;
-              max-height: 24vh;
-              border: 1px solid #1f2937;
-              border-radius: 12px;
-              margin-top: 4px;
-            ">
-            <table id="tblMedalTeams" class="sticky-head">
-              <thead>
-                <tr>
-                  <th class="rank">#</th>
-                  <th>Đơn vị</th>
-                  <th class="gold">Vàng</th>
-                  <th class="silver">Bạc</th>
-                  <th class="bronze">Đồng</th>
-                  <th class="sum">Tổng</th>
-                  <th class="points">Điểm</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
           <div class="mt8 small muted">
             Tiêu chí xếp hạng: Vàng ↓ • Bạc ↓ • Đồng ↓ • Tên ↑
           </div>
         </div>
-        <!-- Bảng chấm điểm -->
-        <div id="cardScore" class="card table-panel">
-          <div class="card-main-head">
-
-            <h2>Bảng chấm điểm</h2>
-
+                <!-- Thiết lập & tuỳ chọn -->
+        <div class="card">
+          <h2>Thiết lập & tuỳ chọn</h2>
+          <div class="kpi">
+            <label class="chip small">
+              <input type="checkbox" id="chkDoubleBronze" />
+              Có đồng huy chương Đồng (đến hạng 4)
+            </label>
+          </div>
+          <div class="toolbar">
+            <button id="btnAddRow" class="ghost">+ Thêm VĐV</button>
+            <button id="btnImportScores" class="ghost">📥 Nhập Excel</button>
+            <button id="btnExportScores" class="ghost">
+              ⬇️ Xuất Excel bảng điểm
+            </button>
+            <button id="btnSave" class="primary">💾 Lưu vào máy (local)</button>
+            <button id="btnReset" class="ghost danger">🧹 Xoá dữ liệu</button>
+            <!-- Input file ẩn để nhập Excel -->
+            <input
+              type="file"
+              id="fileImportScores"
+              accept=".xlsx,.xls,.csv"
+              style="display: none"
+            />
             <label class="chip">
               Lọc lứa tuổi:
               <select id="filterAge">
@@ -192,18 +178,48 @@
               <input
                 type="text"
                 id="txtSearch"
-                placeholder="Tìm VĐV / Năm sinh / Lứa tuổi / Đơn vị..." />
+                placeholder="Tìm VĐV / Năm sinh / Lứa tuổi / Đơn vị..."
+              />
             </div>
+            <!-- <div class="small muted mt8">
+              File Excel để nhập nên theo thứ tự cột:
+              <br />
+              <b
+                >STT, Lứa tuổi, Nội dung, VĐV, Năm sinh, Đơn vị, GĐ1, GĐ2, GĐ3,
+                GĐ4, GĐ5, Tổng, Xếp hạng, Thành tích</b
+              >. 3 cột cuối có thể để trống, hệ thống sẽ tự tính lại.
+            </div> -->
+          </div>
+
+          <!-- <div class="mt8 small muted">
+            Cột <b>"Lứa tuổi"</b> và <b>"Nội dung"</b> dùng để chia nhóm xếp
+            hạng. Ví dụ: "Lứa tuổi 1 + Tứ trụ quyền" là 1 nhóm, "Lứa tuổi 2 + Tứ
+            trụ quyền" là nhóm khác.
+          </div>
+          <div class="mt8 small muted">
+            GĐ1–GĐ5 là điểm của 5 giám định. <b>Tổng điểm</b> được tính theo
+            công thức: <b>tổng 5 điểm − (điểm cao nhất + điểm thấp nhất)</b>.
+            Nếu có ít hơn 3 điểm thì lấy tổng đơn giản.
+          </div> -->
+        </div>
+        <!-- Bảng chấm điểm -->
+        <div id="cardScore" class="card table-panel">
+          <div class="card-main-head">
+            <h2>Bảng chấm điểm</h2>
+
+
             <!-- Nút phóng to card chấm điểm -->
-            <button type="button" class="ghost" id="btnSortRows">⇅ Sort theo BXH</button>
+            <button type="button" class="ghost" id="btnSortRows">
+              ⇅ Sort theo BXH
+            </button>
 
             <button
               type="button"
               class="ghost btn-fullscreen"
-              data-target="#cardScore">
+              data-target="#cardScore"
+            >
               ⤢ Toàn màn hình
             </button>
-
           </div>
           <div
             class="mt8 table-panel-child"
@@ -212,7 +228,8 @@
               max-height: 55vh;
               border: 1px solid #1f2937;
               border-radius: 12px;
-            ">
+            "
+          >
             <table id="tblScores" class="sticky-head">
               <thead>
                 <tr>
