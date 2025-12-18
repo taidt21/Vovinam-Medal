@@ -276,6 +276,12 @@ td input {
 .inp-medal, td.sum, td.pts {
   text-align: center
 }
+.inp-medal,.inp-rank{
+  background: none;
+  border: none;
+  padding: 0;
+  outline: none;
+}
 
 th.age {
   min-width: 100px;
@@ -298,33 +304,11 @@ th.medal {
   font-weight: bold;
 }
 
-/* tương thích class mới trong JS */
-.team-master-row {
-  background: rgba(255, 255, 255, 0.12);
-  font-weight: bold;
-}
-
 .member-row {
   background: rgba(255, 255, 255, 0.04);
 }
 
-/* tương thích class mới trong JS */
-.team-member-row {
-  background: rgba(255, 255, 255, 0.04);
-}
-
 .member-row td {
-  opacity: 0.85;
-  padding-left: 18px;
-}
-
-.team-member-row td {
-  opacity: 0.85;
-  padding-left: 18px;
-}
-
-/* tương thích class mới trong JS */
-.team-member-row td {
   opacity: 0.85;
   padding-left: 18px;
 }
@@ -345,6 +329,13 @@ th.medal {
   color: #facc15;
   /* vàng tươi hơn */
   font-weight: 700;
+}
+
+/* Đối kháng: khoá điểm (disabled) nhưng không bôi đỏ */
+tr.is-combat .inp-g:disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: #9ca3af;
+  cursor: not-allowed;
 }
 
 .col-pts {

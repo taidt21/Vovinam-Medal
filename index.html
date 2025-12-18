@@ -89,12 +89,17 @@
 
           <div class="mt16 small muted header-inline">
             <span>BXH theo VĐV</span>
-            <button
-              type="button"
-              class="ghost btn-fullscreen"
-              data-target="#panelMedalAthletes">
-              ⤢ Toàn màn hình
-            </button>
+            <div class="header-actions">
+              <button type="button" class="ghost" id="btnExportMedalAthletes">
+                ⬇️ Xuất Excel VĐV
+              </button>
+              <button
+                type="button"
+                class="ghost btn-fullscreen"
+                data-target="#panelMedalAthletes">
+                ⤢ Toàn màn hình
+              </button>
+            </div>
           </div>
           <div
             style="
@@ -124,12 +129,17 @@
 
           <div class="mt16 small muted header-inline">
             <span>BXH theo Đoàn</span>
-            <button
-              type="button"
-              class="ghost btn-fullscreen"
-              data-target="#panelMedalTeams">
-              ⤢ Toàn màn hình
-            </button>
+            <div class="header-actions">
+              <button type="button" class="ghost" id="btnExportMedalTeams">
+                ⬇️ Xuất Excel Đoàn
+              </button>
+              <button
+                type="button"
+                class="ghost btn-fullscreen"
+                data-target="#panelMedalTeams">
+                ⤢ Toàn màn hình
+              </button>
+            </div>
           </div>
           <div
             id="panelMedalTeams"
@@ -185,6 +195,8 @@
                 placeholder="Tìm VĐV / Năm sinh / Lứa tuổi / Đơn vị..." />
             </div>
             <!-- Nút phóng to card chấm điểm -->
+            <button type="button" class="ghost" id="btnSortRows">⇅ Sort theo BXH</button>
+
             <button
               type="button"
               class="ghost btn-fullscreen"
@@ -235,8 +247,8 @@
     </div>
 
     <!-- Thư viện đọc/ghi Excel (XLSX) -->
-    <script src="./excel.min.js"></script>
-    <script src="./jquery.min.js"></script>
+    <script src="excel.min.js"></script>
+    <script src="jquery.min.js"></script>
     <script src="script.js"></script>
   </body>
 </html>
