@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Vovinam Score & Medal Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="shortcut icon" href="logo.svg" type="image/x-icon" />
+    <link rel="shortcut icon" href="logo.svg"type="image/x-icon">
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap"
       rel="stylesheet"
@@ -15,9 +15,8 @@
   <body>
     <div class="container">
       <h1>
-        <img src="logo.svg" alt="" />
-        Vector Sport – Bảng chấm điểm & Huy chương
-      </h1>
+        <img src="logo.svg" alt="">
+        Vector Sport – Bảng chấm điểm & Huy chương</h1>
       <p class="small muted mt8">
         Nhập điểm GĐ1–GĐ5 cho từng VĐV / đội. Hệ thống tự tính Tổng điểm, Xếp
         hạng, Thành tích (huy chương) và BXH huy chương theo VĐV / Đoàn.
@@ -52,7 +51,11 @@
               <div class="mt16 small muted header-inline">
                 <span>BXH theo VĐV</span>
                 <div class="header-actions">
-                  <button type="button" class="ghost" id="btnExportMedalAthletes">
+                  <button
+                    type="button"
+                    class="ghost"
+                    id="btnExportMedalAthletes"
+                  >
                     ⬇️ Xuất Excel VĐV
                   </button>
                   <button
@@ -82,8 +85,8 @@
                       <th class="gold">Vàng</th>
                       <th class="silver">Bạc</th>
                       <th class="bronze">Đồng</th>
-                      <th class="sum">Tổng</th>
-                      <th class="pts">Điểm</th>
+                      <th>Tổng</th>
+                      <th>Điểm</th>
                     </tr>
                   </thead>
                   <tbody></tbody>
@@ -136,8 +139,7 @@
             Tiêu chí xếp hạng: Vàng ↓ • Bạc ↓ • Đồng ↓ • Tên ↑
           </div>
         </div>
-
-        <!-- Thiết lập & tuỳ chọn -->
+                <!-- Thiết lập & tuỳ chọn -->
         <div class="card">
           <h2>Thiết lập & tuỳ chọn</h2>
           <div class="kpi">
@@ -154,14 +156,13 @@
             </button>
             <button id="btnSave" class="primary">💾 Lưu vào máy (local)</button>
             <button id="btnReset" class="ghost danger">🧹 Xoá dữ liệu</button>
-
+            <!-- Input file ẩn để nhập Excel -->
             <input
               type="file"
               id="fileImportScores"
               accept=".xlsx,.xls,.csv"
               style="display: none"
             />
-
             <label class="chip">
               Lọc lứa tuổi:
               <select id="filterAge">
@@ -174,7 +175,6 @@
                 <option value>Tất cả nội dung</option>
               </select>
             </label>
-
             <div class="toolbar-search">
               <input
                 type="text"
@@ -182,14 +182,34 @@
                 placeholder="Tìm VĐV / Năm sinh / Lứa tuổi / Đơn vị..."
               />
             </div>
+            <!-- <div class="small muted mt8">
+              File Excel để nhập nên theo thứ tự cột:
+              <br />
+              <b
+                >STT, Lứa tuổi, Nội dung, VĐV, Năm sinh, Đơn vị, GĐ1, GĐ2, GĐ3,
+                GĐ4, GĐ5, Tổng, Xếp hạng, Thành tích</b
+              >. 3 cột cuối có thể để trống, hệ thống sẽ tự tính lại.
+            </div> -->
           </div>
-        </div>
 
+          <!-- <div class="mt8 small muted">
+            Cột <b>"Lứa tuổi"</b> và <b>"Nội dung"</b> dùng để chia nhóm xếp
+            hạng. Ví dụ: "Lứa tuổi 1 + Tứ trụ quyền" là 1 nhóm, "Lứa tuổi 2 + Tứ
+            trụ quyền" là nhóm khác.
+          </div>
+          <div class="mt8 small muted">
+            GĐ1–GĐ5 là điểm của 5 giám định. <b>Tổng điểm</b> được tính theo
+            công thức: <b>tổng 5 điểm − (điểm cao nhất + điểm thấp nhất)</b>.
+            Nếu có ít hơn 3 điểm thì lấy tổng đơn giản.
+          </div> -->
+        </div>
         <!-- Bảng chấm điểm -->
         <div id="cardScore" class="card table-panel">
           <div class="card-main-head">
             <h2>Bảng chấm điểm</h2>
 
+
+            <!-- Nút phóng to card chấm điểm -->
             <button type="button" class="ghost" id="btnSortRows">
               ⇅ Sort theo BXH
             </button>
@@ -202,7 +222,6 @@
               ⤢ Toàn màn hình
             </button>
           </div>
-
           <div
             class="mt8 table-panel-child"
             style="
@@ -226,9 +245,9 @@
                   <th class="gold">GĐ3</th>
                   <th class="gold">GĐ4</th>
                   <th class="gold">GĐ5</th>
-                  <th class="sum">Tổng điểm</th>
-                  <th class="pts">Xếp hạng</th>
-                  <th class="pts">Thành tích</th>
+                  <th>Tổng điểm</th>
+                  <th>Xếp hạng</th>
+                  <th>Thành tích</th>
                   <th></th>
                 </tr>
               </thead>
@@ -245,9 +264,9 @@
       </div>
     </div>
 
+    <!-- Thư viện đọc/ghi Excel (XLSX) -->
     <script src="excel.min.js"></script>
     <script src="jquery.min.js"></script>
-    <!-- Chỉ giữ đúng 1 file JS cuối cùng -->
-    <script src="script.js"></script>
+    <script src="script.updated.js"></script>
   </body>
 </html>

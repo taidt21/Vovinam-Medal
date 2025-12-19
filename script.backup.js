@@ -216,9 +216,7 @@
     return `
       <tr data-id="${id}" data-type="${type}" data-stt="${stt}" ${
       parentId ? `data-parent="${parentId}"` : ""
-    } ${
-      !isMember && medal ? `data-manual-medal="${medal}"` : ""
-    } class="${rowClass}">
+    } ${!isMember && medal ? `data-manual-medal="${medal}"` : ""} class="${rowClass}">
         <td class="rank stt">${stt || ""}</td>
         ${ageCell}
         ${eventCell}
@@ -234,48 +232,47 @@
   // ======================
   // Compute total score for a row
   // ======================
-function computeTotalFromRow($tr) {
-  const type = $tr.data("type") || "single";
-  if (type === "member") {
-    $tr.find(".total").text("");
-    return 0;
+  function computeTotalFromRow($tr) {
+    const type = $tr.data("type") || "single";
+    if (type === "member") {
+      $tr.find(".total").text("");
+      return 0;
+    }
+
+    function readScore(cls) {
+      const $inp = $tr.find(cls);
+      if ($inp.is(":disabled")) return null;
+      const v = $inp.val();
+      if (v === undefined || v === null || v === "") return null;
+      const num = parseFloat(v.toString().replace(",", "."));
+      if (isNaN(num)) return null;
+      if (num < SCORE_MIN) return null;
+      return num;
+    }
+
+    const s1 = readScore(".g1");
+    const s2 = readScore(".g2");
+    const s3 = readScore(".g3");
+    const s4 = readScore(".g4");
+    const s5 = readScore(".g5");
+    const scores = [s1, s2, s3, s4, s5].filter((v) => v !== null);
+
+    if (!scores.length) {
+      $tr.find(".total").text("");
+      return 0;
+    }
+
+    const sum = scores.reduce((a, b) => a + b, 0);
+    let total = sum;
+    if (scores.length >= 3) {
+      const min = Math.min(...scores);
+      const max = Math.max(...scores);
+      total = sum - min - max;
+    }
+
+    $tr.find(".total").text(total ? total.toFixed(2) : "");
+    return total;
   }
-
-  function readScore(cls) {
-    const $inp = $tr.find(cls);
-    if ($inp.is(":disabled")) return null;
-    const v = $inp.val();
-    if (v === undefined || v === null || v === "") return null;
-    const num = parseFloat(v.toString().replace(",", "."));
-    if (isNaN(num)) return null;
-    if (num < SCORE_MIN) return null;
-    return num;
-  }
-
-  const s1 = readScore(".g1");
-  const s2 = readScore(".g2");
-  const s3 = readScore(".g3");
-  const s4 = readScore(".g4");
-  const s5 = readScore(".g5");
-  const scores = [s1, s2, s3, s4, s5].filter((v) => v !== null);
-
-  if (!scores.length) {
-    $tr.find(".total").text("");
-    return 0;
-  }
-
-  const sum = scores.reduce((a, b) => a + b, 0);
-  let total = sum;
-  if (scores.length >= 3) {
-    const min = Math.min(...scores);
-    const max = Math.max(...scores);
-    total = sum - min - max;
-  }
-
-  $tr.find(".total").text(scores.length ? total.toFixed(2) : "");
-  return total;
-}
-
 
   // ======================
   // Read row data object
@@ -284,18 +281,11 @@ function computeTotalFromRow($tr) {
     const type = $tr.data("type") || "single";
     const parentId = $tr.data("parent") || "";
 
-    const readNumOrEmpty = ($inp) => {
-      const v = $inp.val();
-      if (v === undefined || v === null || v === "") return "";
-      const n = parseFloat(v.toString().replace(",", "."));
-      return isNaN(n) ? "" : n;
-    };
-
-    const g1 = readNumOrEmpty($tr.find(".g1"));
-    const g2 = readNumOrEmpty($tr.find(".g2"));
-    const g3 = readNumOrEmpty($tr.find(".g3"));
-    const g4 = readNumOrEmpty($tr.find(".g4"));
-    const g5 = readNumOrEmpty($tr.find(".g5"));
+    const g1 = parseFloat($tr.find(".g1").val()) || 0;
+    const g2 = parseFloat($tr.find(".g2").val()) || 0;
+    const g3 = parseFloat($tr.find(".g3").val()) || 0;
+    const g4 = parseFloat($tr.find(".g4").val()) || 0;
+    const g5 = parseFloat($tr.find(".g5").val()) || 0;
 
     const total = computeTotalFromRow($tr);
 
@@ -315,31 +305,26 @@ function computeTotalFromRow($tr) {
       g4,
       g5,
       total,
-      rank: parseInt(
-        ($tr.find(".inp-rank").val() || "").toString().trim() || "0",
-        10
-      ),
+      rank: parseInt(($tr.find(".inp-rank").val() || "").toString().trim() || "0", 10),
       medal: (($tr.find(".inp-medal").val() || "") + "").trim(),
       manualMedal: (($tr.attr("data-manual-medal") || "") + "").trim(),
     };
   }
 
+  
   // ======================
   // STT: giữ nguyên theo thứ tự tạo (không đổi khi sort/filter)
   // ======================
   function getNextStt() {
     let max = 0;
     $("#tblScores tbody tr").each(function () {
-      const v = parseInt(
-        ($(this).attr("data-stt") || "").toString().trim() || "0",
-        10
-      );
+      const v = parseInt(($(this).attr("data-stt") || "").toString().trim() || "0", 10);
       if (v > max) max = v;
     });
     return max + 1;
   }
 
-  // ======================
+// ======================
   // Append team group (MASTER + SUB-ROWS)
   // ======================
   function appendTeamGroup({ age, event, team, members }) {
@@ -441,8 +426,7 @@ function computeTotalFromRow($tr) {
     });
 
     Object.values(groups).forEach((list) => {
-      const groupEvent =
-        (list[0] && list[0].data ? list[0].data.event : "") || "";
+      const groupEvent = (list[0] && list[0].data ? list[0].data.event : "") || "";
       const isCombatGroup = isCombatEvent(groupEvent);
 
       // Đối kháng: khoá điểm (disabled), chỉ nhập huy chương
@@ -521,9 +505,7 @@ function computeTotalFromRow($tr) {
         }
         $tr.attr("data-auto-medal", autoMedal);
 
-        const manual = normalizeMedal(
-          ($tr.attr("data-manual-medal") || "").trim()
-        );
+        const manual = normalizeMedal(($tr.attr("data-manual-medal") || "").trim());
         const finalMedal = manual || autoMedal;
         $tr.attr("data-final-medal", finalMedal);
 
@@ -562,10 +544,11 @@ function computeTotalFromRow($tr) {
       if (type === "member") return;
 
       const medal = normalizeMedal(
-        (
-          ($tr.attr("data-final-medal") || $tr.find(".inp-medal").val() || "") +
+        ((
+          $tr.attr("data-final-medal") ||
+          $tr.find(".inp-medal").val() ||
           ""
-        ).trim()
+        ) + "").trim()
       );
       if (!medal) return;
 
@@ -836,66 +819,30 @@ function computeTotalFromRow($tr) {
   }
 
   function applyFilters() {
-    const fAge = ($("#filterAge").val() || "").toString().trim();
-    const fEv = ($("#filterEvent").val() || "").toString().trim();
+    const fAge = $("#filterAge").val() || "";
+    const fEv = $("#filterEvent").val() || "";
     const q = normalizeStr($("#txtSearch").val() || "");
 
-    const $tb = $("#tblScores tbody");
-    const $rows = $tb.find("tr");
+    $("#tblScores tbody tr").each(function () {
+      const $tr = $(this);
 
-    const matchRow = ($tr) => {
-      const age = (($tr.find(".inp-age").val() || "") + "").trim();
-      const ev = (($tr.find(".inp-event").val() || "") + "").trim();
+      const age = ($tr.find(".inp-age").val() || "").trim();
+      const ev = ($tr.find(".inp-event").val() || "").trim();
       const name = $tr.find(".ath-name").text().trim();
-      const yob = (($tr.find(".inp-yob").val() || "") + "").trim();
-      const team = (($tr.find(".inp-team").val() || "") + "").trim();
+      const yob = ($tr.find(".inp-yob").val() || "").trim();
+      const team = ($tr.find(".inp-team").val() || "").trim();
 
       const okAge = !fAge || age === fAge;
       const okEv = !fEv || ev === fEv;
 
       let okSearch = true;
       if (q) {
-        // search: tên / năm sinh / lứa tuổi / đơn vị / nội dung
-        const haystack = normalizeStr([name, yob, age, team, ev].join(" "));
+        const haystack = normalizeStr([name, yob, age, team].join(" "));
         okSearch = haystack.includes(q);
       }
 
-      return okAge && okEv && okSearch;
-    };
-
-    // Ẩn hết trước, rồi show theo block
-    $rows.hide();
-
-    $rows.each(function () {
-      const $tr = $(this);
-      const type = $tr.data("type") || "single";
-
-      // member sẽ đi theo master
-      if (type === "member") return;
-
-      if (type === "single") {
-        if (matchRow($tr)) $tr.show();
-        return;
-      }
-
-      // master: nếu master match hoặc có bất kỳ member match -> show cả block
-      const masterId = $tr.data("id");
-      const $members = $tb.find(`tr[data-parent="${masterId}"]`);
-
-      let showBlock = matchRow($tr);
-      if (!showBlock) {
-        $members.each(function () {
-          if (matchRow($(this))) {
-            showBlock = true;
-            return false; // break
-          }
-        });
-      }
-
-      if (showBlock) {
-        $tr.show();
-        $members.show();
-      }
+      const show = okAge && okEv && okSearch;
+      $tr.toggle(show);
     });
   }
 
@@ -953,19 +900,17 @@ function computeTotalFromRow($tr) {
           normalizeMedal(($tr.attr("data-final-medal") || "").trim()) ||
           normalizeMedal(d.medal);
         // ===== Dòng thi cá nhân / cặp: mỗi dòng 1 VĐV/cặp, không merge =====
-        const cell = (v) => (v === 0 ? 0 : v || "");
-
         aoa.push([
           d.age,
           d.event,
           d.name,
           d.yob,
           d.team,
-          cell(d.g1),
-          cell(d.g2),
-          cell(d.g3),
-          cell(d.g4),
-          cell(d.g5),
+          d.g1 || "",
+          d.g2 || "",
+          d.g3 || "",
+          d.g4 || "",
+          d.g5 || "",
           d.total || "",
           d.rank || "",
           finalMedal || "",
@@ -977,9 +922,7 @@ function computeTotalFromRow($tr) {
           normalizeMedal(d.medal);
         // ===== Dòng master của đội (đồng đội / song luyện) =====
         const masterId = $tr.data("id");
-        const $members = $(
-          `#tblScores tbody tr[data-parent="${masterId}"]:visible`
-        );
+        const $members = $(`#tblScores tbody tr[data-parent="${masterId}"]:visible`);
         const members = [];
 
         $members.each(function () {
@@ -1135,6 +1078,7 @@ function computeTotalFromRow($tr) {
     XLSX.writeFile(wb, "vovinam_scores.xlsx");
   }
 
+  
   // ======================
   // Export Excel: BXH huy chương (VĐV / Đoàn)
   // ======================
@@ -1183,7 +1127,7 @@ function computeTotalFromRow($tr) {
     XLSX.writeFile(wb, fileName || "export.xlsx");
   }
 
-  // ======================
+// ======================
   // Import Excel dạng đăng ký 5 cột
   // (Lứa tuổi, Nội dung, Tên VĐV, Năm sinh, Đơn vị)
   // ======================
@@ -1616,6 +1560,7 @@ function computeTotalFromRow($tr) {
     reader.readAsArrayBuffer(file);
   }
 
+  
   // ======================
   // Manual sort bảng chấm điểm (chỉ sort khi bấm nút)
   // - Ưu tiên theo: Lứa tuổi -> Nội dung -> Xếp hạng -> Tổng điểm -> Tên
@@ -1660,32 +1605,22 @@ function computeTotalFromRow($tr) {
       const isCombat = isCombatEvent(ev);
 
       const finalMedal = normalizeMedal(
-        (($tr.attr("data-final-medal") || "") + "").trim() || d.medal || ""
+        ((($tr.attr("data-final-medal") || "") + "").trim() || (d.medal || ""))
       );
 
       const medalOrder =
-        finalMedal === "Vàng"
-          ? 1
-          : finalMedal === "Bạc"
-          ? 2
-          : finalMedal === "Đồng"
-          ? 3
-          : 99;
+        finalMedal === "Vàng" ? 1 : finalMedal === "Bạc" ? 2 : finalMedal === "Đồng" ? 3 : 99;
 
-      const total =
-        parseFloat(
-          ($tr.find(".total").text() || "0").toString().replace(",", ".")
-        ) || 0;
+      const total = parseFloat(($tr.find(".total").text() || "0").toString().replace(",", ".")) || 0;
       const name = (d.name || "").trim();
 
       // xếp hạng chỉnh tay (ưu tiên làm tie-break khi cùng huy chương)
       const mrRaw = ($tr.find(".inp-rank").val() ?? "").toString().trim();
-      const manualRank = mrRaw === "" ? null : parseInt(mrRaw, 10) || null;
+      const manualRank = mrRaw === "" ? null : (parseInt(mrRaw, 10) || null);
 
       units.push({
         block,
         $head: $tr,
-        isVisible: $tr.is(":visible"),
         age,
         ev,
         isCombat,
@@ -1699,14 +1634,7 @@ function computeTotalFromRow($tr) {
 
     const viCmp = (a, b) => a.localeCompare(b, "vi", { sensitivity: "base" });
 
-    // Nếu đang lọc (age/event/search) thì chỉ sort các block đang hiển thị (visible),
-    // block đang ẩn giữ nguyên vị trí tương đối (để khi bỏ lọc không bị xáo dữ liệu).
-    const fAge = ($("#filterAge").val() || "").toString().trim();
-    const fEv = ($("#filterEvent").val() || "").toString().trim();
-    const q = normalizeStr($("#txtSearch").val() || "");
-    const filterActive = !!(fAge || fEv || q);
-
-    const cmpUnits = (a, b) => {
+    units.sort((a, b) => {
       // group: lứa tuổi -> nội dung
       const c1 = viCmp(a.age, b.age);
       if (c1 !== 0) return c1;
@@ -1748,31 +1676,18 @@ function computeTotalFromRow($tr) {
       }
 
       return viCmp(a.name, b.name);
-    };
-
-    let unitsFinal = null;
-
-    if (!filterActive) {
-      unitsFinal = units.slice().sort(cmpUnits);
-    } else {
-      const visibleUnits = units.filter((u) => u.isVisible);
-      const sortedVisible = visibleUnits.slice().sort(cmpUnits);
-      let vi = 0;
-
-      // giữ nguyên slot của các block đang ẩn
-      unitsFinal = units.map((u) => (u.isVisible ? sortedVisible[vi++] : u));
-    }
+    });
 
     // Re-append theo thứ tự mới
     const frag = document.createDocumentFragment();
-    unitsFinal.forEach((u) => {
+    units.forEach((u) => {
       u.block.forEach((el) => frag.appendChild(el));
     });
     $tb.get(0).appendChild(frag);
 
     // ====== Gán XẾP HẠNG sau khi sort (STT giữ nguyên) ======
     const groupMap = new Map(); // key -> array units in display order
-    unitsFinal.forEach((u) => {
+    units.forEach((u) => {
       const key = `${u.age}||${u.ev}`;
       if (!groupMap.has(key)) groupMap.set(key, []);
       groupMap.get(key).push(u);
@@ -1781,15 +1696,11 @@ function computeTotalFromRow($tr) {
     groupMap.forEach((list) => {
       const isCombat = list[0]?.isCombat;
 
-      // Nếu đang lọc: chỉ cập nhật Xếp hạng cho các block đang hiển thị
-      const work = filterActive ? list.filter((u) => u.isVisible) : list;
-      if (!work.length) return;
-
       if (isCombat) {
         // Đối kháng: gán theo huy chương. Nếu bật double bronze: Đồng #1 = hạng 3, Đồng #2 = hạng 4
         let bronzeCount = 0;
 
-        work.forEach((u) => {
+        list.forEach((u) => {
           const $rank = u.$head.find(".inp-rank");
           if (!$rank.length) return;
 
@@ -1811,7 +1722,7 @@ function computeTotalFromRow($tr) {
 
       // Biểu diễn: gán theo tổng điểm (chỉ dòng có total > 0)
       let r = 0;
-      work.forEach((u) => {
+      list.forEach((u) => {
         const $rank = u.$head.find(".inp-rank");
         if (!$rank.length) return;
         if (u.total > 0) {
@@ -1829,7 +1740,7 @@ function computeTotalFromRow($tr) {
     toast("Đã sắp xếp bảng chấm điểm và cập nhật Xếp hạng.");
   }
 
-  // ======================
+// ======================
   // Events
   // ======================
   // Điểm: debounce để nhập nhanh
@@ -1888,7 +1799,7 @@ function computeTotalFromRow($tr) {
 
     const norm = normalizeMedal(raw);
     if (!norm) {
-      toast("Thành tích chỉ nhận: V/B/Đ hoặc Vàng/Bạc/Đồng", true);
+      toast('Thành tích chỉ nhận: V/B/Đ hoặc Vàng/Bạc/Đồng', true);
       $inp.val("");
       $tr.removeAttr("data-manual-medal");
       requestRecalc();
@@ -1998,26 +1909,10 @@ function computeTotalFromRow($tr) {
   $(document).on("click", ".btnDelRow", function () {
     const $tr = $(this).closest("tr");
     const type = $tr.data("type") || "single";
-
     if (type === "master") {
       const id = $tr.data("id");
-      const memberCount = $(`#tblScores tbody tr[data-parent="${id}"]`).length;
-
-      const ok = confirm(
-        `Xoá đội này sẽ xoá cả MASTER và ${memberCount} VĐV thành viên. Bạn chắc chắn muốn xoá?`
-      );
-      if (!ok) return;
-
       $(`#tblScores tbody tr[data-parent="${id}"]`).remove();
-      $tr.remove();
-      recalcAllScores();
-      return;
     }
-
-    const name = $tr.find(".ath-name").text().trim();
-    const ok = confirm(`Xoá dòng${name ? `: "${name}"` : ""}?`);
-    if (!ok) return;
-
     $tr.remove();
     recalcAllScores();
   });
@@ -2082,6 +1977,8 @@ function computeTotalFromRow($tr) {
     exportScoresToExcel();
   });
 
+  
+
   // Sort thủ công: chỉ khi bấm nút
   $("#btnSortRows").on("click", function () {
     sortScoreTableManual();
@@ -2089,21 +1986,13 @@ function computeTotalFromRow($tr) {
 
   // Export Excel BXH huy chương
   $("#btnExportMedalAthletes").on("click", function () {
-    exportHtmlTableToExcel(
-      "#tblMedalAthletes",
-      "bxh_huy_chuong_vdv.xlsx",
-      "BXH_VDV"
-    );
+    exportHtmlTableToExcel("#tblMedalAthletes", "bxh_huy_chuong_vdv.xlsx", "BXH_VDV");
   });
   $("#btnExportMedalTeams").on("click", function () {
-    exportHtmlTableToExcel(
-      "#tblMedalTeams",
-      "bxh_huy_chuong_doan.xlsx",
-      "BXH_DOAN"
-    );
+    exportHtmlTableToExcel("#tblMedalTeams", "bxh_huy_chuong_doan.xlsx", "BXH_DOAN");
   });
 
-  $("#btnImportScores").on("click", function () {
+$("#btnImportScores").on("click", function () {
     $("#fileImportScores").val("");
     $("#fileImportScores").trigger("click");
   });
@@ -2141,7 +2030,9 @@ function computeTotalFromRow($tr) {
   // Khi thoát fullscreen bằng ESC hoặc nút trình duyệt
   document.addEventListener("fullscreenchange", function () {
     if (!document.fullscreenElement) {
-      $(".fullscreen-active").removeClass("fullscreen-active"); // remove cho mọi panel
+      // remove class trên panel
+      $(".table-panel.fullscreen-active").removeClass("fullscreen-active");
+      // reset nút
       $(".btn-fullscreen.is-fullscreen")
         .removeClass("is-fullscreen")
         .each(function () {

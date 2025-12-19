@@ -5,9 +5,9 @@
   --fg: #e5e7eb;
   --primary: #22d3ee;
   --accent: #a78bfa;
-  --gold: #f59e0b;
-  --silver: #9ca3af;
-  --bronze: #c084fc;
+  --gold: #ffd700;
+  --silver: #c0c0c0;
+  --bronze: #b87333;
 }
 
 * {
@@ -30,7 +30,7 @@ body {
 
 .container {
   max-width: calc(100vw - 30px);
-  margin: 0 auto;
+  margin: 20px auto;
   padding: 0 16px;
 }
 
@@ -49,8 +49,14 @@ input[type=number] {
 h1 {
   font-size: 28px;
   margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+h1 img {
+  width: 60px;
 
+}
 .sub {
   color: var(--muted);
   margin-bottom: 20px;
@@ -66,6 +72,7 @@ h1 {
 .card-row-bxh{
   display: grid;
   grid-template-columns: repeat(2,1fr);
+  gap: 15px;
 }
 
 .card {
@@ -87,6 +94,9 @@ h1 {
 .card:nth-child(3) {
   grid-area: c;
 } */
+ #panelMedalAthletes,#panelMedalTeams{
+  max-height: 440px;
+ }
 .header-actions{
   margin-right: 50px;
   display: flex;
@@ -281,13 +291,14 @@ td input {
   width: 100%;
 }
 
-.inp-medal, td.sum, td.pts {
+.inp-medal, .sum, .pts,.total {
   text-align: center
 }
 .inp-medal,.inp-rank{
   background: none;
   border: none;
   padding: 0;
+  text-align: center;
   outline: none;
 }
 
