@@ -408,7 +408,7 @@ td.gold, td.silver, td.bronze {
 
 .card-main-head {
   display: flex;
-  gap: 1rem;
+  gap: 9px;
   flex-wrap: wrap;
 }
 
